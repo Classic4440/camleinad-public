@@ -60,14 +60,18 @@ export default function NewsPage() {
         ) : (
           <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
             {articles.map(article => {
-              const cover = article.cover_url || article.cover_image_url;
+              const cover = (article as NewsArticle & { cover_url?: string | null }).cover_url ?? article.cover_image_url ?? null;
               return (
                 <article key={article.id} className="overflow-hidden border border-[var(--rule)] bg-white/25">
-                  {cover && (
-                    <Link to={`/news/${article.slug}`} className="block aspect-[16/9] overflow-hidden" aria-label={`Read ${article.title}`}>
+                  <Link to={`/news/${article.slug}`} className="block aspect-[16/9] overflow-hidden" aria-label={`Read ${article.title}`}>
+                    {cover ? (
                       <img src={cover} alt={`${article.title} article artwork`} width={1280} height={720} loading="lazy" className="h-full w-full object-cover" />
-                    </Link>
-                  )}
+                    ) : (
+                      <div className="flex h-full w-full items-end bg-[var(--surface)] p-4">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-muted)]">{article.category || 'Journal'}</span>
+                      </div>
+                    )}
+                  </Link>
 
                 <div className="p-5">
                   {article.category && <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-muted)]">{article.category}</p>}

@@ -53,16 +53,8 @@ export default function NewsAdmin() {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      console.error('[CoverUpload] Invalid image type:', file.type);
-      toast.error('Please select an image file');
-      return;
-    }
-    if (file.size >= 5 * 1024 * 1024) {
-      console.error('[CoverUpload] Image exceeds 5 MB:', file.size);
-      toast.error('Cover image must be under 5 MB');
-      return;
-    }
+    if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
+    if (file.size >= 5 * 1024 * 1024) { toast.error('Cover image must be under 5 MB'); return; }
 
     const extension = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
     const slug = (form.slug || autoSlug(form.title) || 'article').trim() || 'article';
@@ -76,8 +68,7 @@ export default function NewsAdmin() {
       });
       setForm(current => ({ ...current, cover_url: publicUrl }));
       toast.success('Cover image uploaded');
-    } catch (error) {
-      console.error('[CoverUpload] Failed:', error);
+    } catch {
       toast.error('Could not upload the cover image. Try again.');
     } finally {
       setCoverUploading(false);

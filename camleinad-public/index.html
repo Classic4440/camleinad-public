@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png?v=2" />
+  <link rel="shortcut icon" href="/favicon.ico?v=2" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="preconnect" href="https://wptaddzloshnaecnrfyv.supabase.co" crossorigin />
+  <link rel="dns-prefetch" href="https://wptaddzloshnaecnrfyv.supabase.co" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+    (() => {
+      let saved = null;
+      try { saved = localStorage.getItem('cam-theme'); } catch { saved = null; }
+      const theme = saved === 'paper' || saved === 'light'
+        ? 'paper'
+        : saved === 'ink' || saved === 'dark'
+          ? 'ink'
+          : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'ink' : 'paper');
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.classList.toggle('dark', theme === 'ink');
+    })();
+  </script>
+  <title>Cam Leinad — CAM | Cam All May Records</title>
+  <meta name="description"
+    content="Cam Leinad — independent pop artist on Cam All May Records. Debut single 'How It Starts' out now." />
+  <meta name="theme-color" content="#F4EFE7" />
+  <link rel="canonical" href="https://camleinad.pages.dev/" />
+  <!-- Open Graph -->
+  <meta property="og:title" content="Cam Leinad — CAM | Cam All May Records" />
+  <meta property="og:description"
+    content="Cam Leinad — independent pop artist on Cam All May Records. Debut single 'How It Starts' out now." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://camleinad.pages.dev/" />
+  <meta property="og:image" content="https://camleinad.pages.dev/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Cam Leinad — CAM | Cam All May Records" />
+  <meta name="twitter:description"
+    content="Cam Leinad — independent pop artist on Cam All May Records. Debut single 'How It Starts' out now." />
+  <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"Organization","name":"Cam All May","alternateName":"CAM","recordLabel":"Cam All May","founder":{"@type":"Person","name":"Cam Leinad"},"brand":{"@type":"Brand","name":"CAM"},"url":"https://camleinad.pages.dev"}
+    </script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter+Tight:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>
