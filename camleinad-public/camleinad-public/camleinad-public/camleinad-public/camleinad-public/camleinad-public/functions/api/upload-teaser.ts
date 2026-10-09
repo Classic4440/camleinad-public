@@ -48,8 +48,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     });
   }
 
-  // Check admin role
-  const { data: profile, error: profileErr } = await anonClient
+  // Use service role for the role lookup because anon cannot read profiles.role.
+  const adminClient = createClient(env.VITE_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+  const { data: profile, error: profileErr } = await adminClient
     .from('profiles')
     .select('role')
     .eq('id', userData.user.id)
@@ -60,9 +61,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       headers: { 'Content-Type': 'application/json' },
     });
   }
-
-  // Service-role client bypasses RLS
-  const adminClient = createClient(env.VITE_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
   // Decode base64 to Uint8Array
   const binaryString = atob(fileBase64);
