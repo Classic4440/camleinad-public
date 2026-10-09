@@ -1,0 +1,66 @@
+name: Deploy to Cloudflare Pages
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Clean install state
+        run: |
+          rm -rf node_modules
+          rm -f package-lock.json
+          rm -f bun.lock bun.lockb
+          npm cache clean --force
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify @breezystack/lamejs is installed
+        run: |
+          if [ ! -d "node_modules/@breezystack/lamejs" ]; then
+            echo "ERROR: @breezystack/lamejs was not installed. Check package.json."
+            echo "--- package.json dependencies ---"
+            cat package.json | grep -A 30 '"dependencies"'
+            exit 1
+          fi
+          echo "✓ @breezystack/lamejs installed"
+          ls node_modules/@breezystack/lamejs | head -5
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3.14.1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "3.90.0"
+          command: pages deploy dist --project-name camleinad
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      # NEW STEP: Mirror all repo files to camleinad-public
+      - name: Push all files to camleinad-public
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git clone https://x-access-token:${{ secrets.PUBLIC_REPO_TOKEN }}@github.com/Classic4440/camleinad-public.git
+          rsync -av --exclude='.git' --exclude='node_modules' ./ camleinad-public/
+          cd camleinad-public
+          git add .
+          git commit -m "Sync from camleinad main"
+          git push origin main

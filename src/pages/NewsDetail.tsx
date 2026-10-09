@@ -141,10 +141,10 @@ export default function NewsDetailPage() {
                 <div key={c.id} className="news-comment">
                   <div className="flex items-center gap-2 mb-2">
                     <Avatar src={c.profile?.avatar_url} name={c.profile?.display_name || c.profile?.username} size={28} />
-                    <span className="text-sm font-medium text-white">{c.profile?.display_name || c.profile?.username || 'Fan'}</span>
-                    <span className="text-xs text-[#72727E]">{new Date(c.created_at).toLocaleDateString()}</span>
+                    <span className="text-sm font-medium text-white">{c.profile?.display_name || c.profile?.username || 'Anonymous'}</span>
+                    <time className="text-xs text-[#72727E]" dateTime={c.created_at}>{new Date(c.created_at).toLocaleDateString()}</time>
                   </div>
-                  <p className="text-sm text-[#A8A8B3]">{c.body}</p>
+                  <p className="whitespace-pre-wrap text-sm text-[#A8A8B3]">{c.body}</p>
                 </div>
               ))}
             </div>

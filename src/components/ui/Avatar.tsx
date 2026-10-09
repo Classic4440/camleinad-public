@@ -26,7 +26,7 @@ function resolveAvatarSource(source: string) {
     return supabase.storage.from('avatars').getPublicUrl(value.replace(/^avatars\//, '')).data.publicUrl;
 }
 
-export default function Avatar({ src, name, size = 40, className }: AvatarProps) {
+export default function Avatar({ src, name, size = 32, className }: AvatarProps) {
     const [failedSource, setFailedSource] = useState<string | null>(null);
     const source = src?.trim() || '';
     const imageUrl = source ? resolveAvatarSource(source) : '';
