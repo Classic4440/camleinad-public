@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme, type SiteTheme } from '@/contexts/ThemeContext';
 import { Moon, Sun, X } from 'lucide-react';
 import CamLogo from '@/components/layout/CamLogo';
 import Avatar from '@/components/ui/Avatar';
@@ -18,15 +18,16 @@ const navLinks = [
 
 function ThemeToggle() {
   const { theme, cycleTheme } = useTheme();
-  const Icon = theme === 'ink' ? Moon : Sun;
-  const nextTheme = theme === 'paper' ? 'INK' : 'PAPER';
+  const themeOrder: SiteTheme[] = ['paper', 'mist', 'ink', 'ember'];
+  const nextTheme = themeOrder[(themeOrder.indexOf(theme) + 1) % themeOrder.length];
+  const Icon = theme === 'ink' || theme === 'ember' ? Moon : Sun;
 
   return (
     <button
       type="button"
       onClick={cycleTheme}
       aria-label={`Switch to ${nextTheme} theme`}
-      title={`Switch to ${nextTheme}`}
+      title={`Switch to ${nextTheme} theme`}
       className="w-9 h-9 inline-flex items-center justify-center rounded-lg glass border border-white/10 text-[#A8A8B3] hover:text-white hover:border-violet-400/40 transition-colors"
     >
       <Icon aria-hidden="true" className="w-4 h-4" />

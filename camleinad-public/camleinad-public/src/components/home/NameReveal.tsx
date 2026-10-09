@@ -63,15 +63,24 @@ export default function NameReveal() {
     beginTransformation();
   }
 
+  function handleListenClick() {
+    document.getElementById('featured-release')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   return (
     <section aria-label="Daniel Mac becomes Cam Leinad" className="relative flex min-h-[100svh] items-center justify-center overflow-hidden bg-[var(--base)] px-3 text-center">
       <div className="relative h-[1.25em] w-full max-w-full scale-x-[0.82] font-display text-[clamp(48px,12vw,160px)] leading-none" style={{ letterSpacing: '0.2em' }} aria-label={transformed || reduceMotion ? ARTIST_NAME : ORIGINAL_NAME}>
         <NameLetters text={ORIGINAL_NAME} visible={!transformed && !reduceMotion} outline reduceMotion={Boolean(reduceMotion)} />
         <NameLetters text={ARTIST_NAME} visible={transformed || Boolean(reduceMotion)} outline={false} reduceMotion={Boolean(reduceMotion)} />
       </div>
-      <p className="absolute bottom-[18%] min-h-6 px-4 text-xs tracking-[0.08em] text-[var(--ink-muted)] sm:text-sm" aria-live="polite" style={{ opacity: captionVisible || reduceMotion ? 1 : 0, transition: reduceMotion ? 'none' : 'opacity 400ms ease' }}>
-        The name backwards. The artist forwards.
-      </p>
+      <div className="absolute bottom-[18%] flex flex-col items-center gap-4 px-4">
+        <p className="min-h-6 text-[10px] uppercase tracking-[0.24em] text-[var(--ink-muted)] sm:text-xs" aria-live="polite" style={{ opacity: captionVisible || reduceMotion ? 1 : 0, transition: reduceMotion ? 'none' : 'opacity 400ms ease' }}>
+          The name backwards. The artist forwards.
+        </p>
+        <button type="button" onClick={handleListenClick} className="inline-flex items-center justify-center border border-[var(--rule)] bg-[var(--accent)] px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--base)] rounded-[2px] transition-colors hover:opacity-90" style={{ opacity: captionVisible || reduceMotion ? 1 : 0, transition: reduceMotion ? 'none' : 'opacity 400ms ease' }}>
+          Listen
+        </button>
+      </div>
       <motion.div
         aria-hidden="true"
         className="absolute bottom-7 left-1/2 -translate-x-1/2 text-[var(--ink-muted)]"

@@ -8,6 +8,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Moon, Sun, X } from 'lucide-react';
 import CamLogo from '@/components/layout/CamLogo';
 import Avatar from '@/components/ui/Avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -104,19 +105,22 @@ export default function Navbar() {
                       Admin
                     </Link>
                   )}
-                  <Link to="/profile" aria-label="Open your profile" title="Your profile" className="w-9 h-9 rounded-full overflow-hidden border border-white/15 flex items-center justify-center bg-violet-500/20 text-sm text-white">
-                    <Avatar
-                      src={profile?.avatar_url}
-                      name={profile?.display_name || profile?.username || 'CAM'}
-                      size={32}
-                    />
-                  </Link>
-                  <button
-                    onClick={logout}
-                    className="text-sm text-[#A8A8B3] hover:text-white transition-colors"
-                  >
-                    Sign Out
-                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button type="button" aria-label="Open account menu" title="Account menu" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--rule)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]">
+                        <Avatar src={profile?.avatar_url} name={profile?.display_name || profile?.username || user.username} size={32} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="z-[60] w-48 max-w-[calc(100vw-2rem)] border-[var(--rule)] bg-[var(--base)] text-[var(--ink)]">
+                      <DropdownMenuItem asChild className="cursor-pointer text-[var(--ink)] focus:bg-[var(--surface)] focus:text-[var(--ink)]">
+                        <Link to="/profile">Profile</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-[var(--rule)]" />
+                      <DropdownMenuItem onSelect={() => void logout()} className="cursor-pointer text-[var(--ink)] focus:bg-[var(--surface)] focus:text-[var(--ink)]">
+                        Sign Out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ) : (
                 <Link
@@ -204,18 +208,28 @@ export default function Navbar() {
               <div className="mt-8 flex flex-col gap-3">
                 {user ? (
                   <>
-                    <Link to="/profile" className="px-4 py-3 rounded-xl text-center text-sm font-medium glass border border-white/10 text-white">Your Profile</Link>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button type="button" aria-label="Open account menu" className="flex min-h-11 min-w-0 items-center gap-3 rounded-xl border border-[var(--rule)] px-4 py-2 text-left text-sm text-[var(--ink)]">
+                          <Avatar src={profile?.avatar_url} name={profile?.display_name || profile?.username || user.username} size={32} />
+                          <span className="min-w-0 flex-1 truncate">{profile?.display_name || profile?.username || user.username}</span>
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent side="top" align="end" className="z-[60] w-56 max-w-[calc(100vw-2rem)] border-[var(--rule)] bg-[var(--base)] text-[var(--ink)]">
+                        <DropdownMenuItem asChild className="cursor-pointer text-[var(--ink)] focus:bg-[var(--surface)] focus:text-[var(--ink)]">
+                          <Link to="/profile">Profile</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="bg-[var(--rule)]" />
+                        <DropdownMenuItem onSelect={() => void logout()} className="cursor-pointer text-[var(--ink)] focus:bg-[var(--surface)] focus:text-[var(--ink)]">
+                          Sign Out
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     {isAdmin && (
                       <Link to="/admin" className="px-4 py-3 rounded-xl text-center text-sm font-medium glass border border-violet-500/30 text-violet-300">
                         Admin Panel
                       </Link>
                     )}
-                    <button
-                      onClick={logout}
-                      className="px-4 py-3 rounded-xl text-sm text-[#A8A8B3] hover:text-white transition-colors text-left"
-                    >
-                      Sign Out
-                    </button>
                   </>
                 ) : (
                   <Link to="/auth" className="px-4 py-3 rounded-xl text-center text-sm font-semibold bg-violet-600 text-white">

@@ -16,13 +16,9 @@
     (() => {
       let saved = null;
       try { saved = localStorage.getItem('cam-theme'); } catch { saved = null; }
-      const theme = saved === 'paper' || saved === 'light'
-        ? 'paper'
-        : saved === 'ink' || saved === 'dark'
-          ? 'ink'
-          : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'ink' : 'paper');
+      const theme = ['paper', 'ink', 'mist', 'ember'].includes(saved) ? saved : 'paper';
       document.documentElement.dataset.theme = theme;
-      document.documentElement.classList.toggle('dark', theme === 'ink');
+      document.documentElement.classList.toggle('dark', theme === 'ink' || theme === 'ember');
     })();
   </script>
   <title>Cam Leinad — CAM | Cam All May Records</title>

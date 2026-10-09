@@ -32,7 +32,7 @@ const STEMS = [
 ] as const;
 
 export default function ProfilePage() {
-    const { user, loading: authLoading, isAdmin, refreshProfile } = useAuth();
+    const { user, profile: authProfile, loading: authLoading, isAdmin, refreshProfile } = useAuth();
     const { playTrack } = usePlayer();
     const { upload, progress: uploadProgress, status: uploadStatus } = useUpload();
     const [profile, setProfile] = useState<Profile | null>(null);
@@ -78,7 +78,7 @@ export default function ProfilePage() {
             setForm({
                 displayName: userProfile?.display_name || userProfile?.username || user.username,
                 bio: userProfile?.bio || '',
-                avatarUrl: userProfile?.avatar_url || user.avatar || '',
+                avatarUrl: userProfile?.avatar_url || '',
             });
             setStemTracks(stems);
 
@@ -245,7 +245,7 @@ export default function ProfilePage() {
                     <FetchError message="Couldn’t load your profile. Try again." onRetry={() => setRetryCount(count => count + 1)} />
                 ) : <>
                     <header className="flex flex-col gap-6 border-b border-[var(--rule)] pb-8 sm:flex-row sm:items-center">
-                        <Avatar src={form.avatarUrl} name={displayName} size={96} />
+                        <Avatar src={authProfile?.avatar_url || form.avatarUrl} name={authProfile?.display_name || authProfile?.username || displayName} size={96} />
                         <div className="min-w-0 flex-1">
                             <h1 className="font-display text-2xl text-[var(--ink)]">{displayName}</h1>
                             <p className="mt-1 text-xs uppercase tracking-wider text-[var(--ink-muted)]">@{profile?.username || user.username}</p>

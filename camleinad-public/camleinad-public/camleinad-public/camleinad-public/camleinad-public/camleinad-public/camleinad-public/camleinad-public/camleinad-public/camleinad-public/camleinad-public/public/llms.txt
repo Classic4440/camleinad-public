@@ -1,0 +1,46 @@
+# Cam Leinad
+
+> Cam Leinad is an independent pop and easy-listening artist releasing on Cam All May (CAM), his independent record label. Born in Uganda on 16 May 2004; lived in the UK and South Korea. Debut single "How It Starts" released April 18, 2026. Upcoming EP "Distant Light" (6 tracks).
+
+## Artist
+
+- **Brand:** CAM
+- **Record label:** Cam All May (short form: CAM)
+- **Label:** Independent, founded by Cam Leinad; no major-label affiliation
+- **Name origin:** Cam Leinad is "Daniel Mac" reversed; CAM is the short form and also the Cam All May label name. "May" refers to the artist's birth month. Three names, one identity: born Daniel Mac, becoming Cam Leinad, releasing under Cam All May.
+- **Artist name:** Cam Leinad
+- **Genre:** Pop, Easy Listening
+- **Tagline:** Pop. Easy Listening.
+- **Label tagline:** Released independently on Cam All May.
+- **Origin:** Uganda
+- **Started:** 2026
+- **Contact:** camleinad@outlook.com
+
+## Released Music
+
+- How It Starts — Single — April 18, 2026 — Released on Cam All May (CAM)
+
+## Upcoming Music
+
+- **Distant Light** — EP — 6 tracks — Coming Soon
+  - Distant Light (2:49)
+  - Beyond the Mist (3:02)
+  - Neon Ghost (2:12)
+  - Electric Heartbreak (3:01)
+  - Crown of Soot and Gold (3:02)
+  - Hologram Tears (2:19)
+
+## Streaming & Social
+
+Streaming and social URLs are configured in the site's `social_links` table and displayed on the main site's social section.
+
+## Pages
+
+- [About & Discography](https://camleinad.pages.dev/about.html)
+- [Main site](https://camleinad.pages.dev)
+- [Music](https://camleinad.pages.dev/music)
+- [Videos](https://camleinad.pages.dev/videos)
+- [Gallery](https://camleinad.pages.dev/gallery)
+- [News](https://camleinad.pages.dev/news)
+- [Contact](https://camleinad.pages.dev/contact)
+
