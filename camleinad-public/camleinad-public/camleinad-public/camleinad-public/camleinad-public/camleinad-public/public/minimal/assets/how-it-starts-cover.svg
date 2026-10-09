@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1600" viewBox="0 0 1600 1600" role="img" aria-labelledby="title description">
+  <title id="title">How It Starts cover artwork placeholder</title>
+  <desc id="description">Solid terracotta artwork stand-in, labeled for replacement with the official cover.</desc>
+  <rect width="1600" height="1600" fill="#C97B4A"/>
+  <path d="M100 140h1400M100 1460h1400" stroke="#1A1714" stroke-width="2"/>
+  <text x="100" y="205" fill="#1A1714" font-family="Arial, sans-serif" font-size="25" letter-spacing="8">COVER ARTWORK PLACEHOLDER</text>
+  <text x="94" y="770" fill="#1A1714" font-family="Georgia, serif" font-size="198" letter-spacing="-5">HOW IT</text>
+  <text x="94" y="990" fill="#1A1714" font-family="Georgia, serif" font-size="198" letter-spacing="-5">STARTS</text>
+  <text x="100" y="1405" fill="#1A1714" font-family="Arial, sans-serif" font-size="28" letter-spacing="10">CAM LEINAD</text>
+</svg>

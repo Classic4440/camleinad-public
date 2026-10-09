@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Blocks, Clapperboard, Images, LayoutDashboard, Link as LinkIcon, Mail, Moon, Newspaper, SlidersHorizontal, Sun } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import CamLogo from '@/components/layout/CamLogo';
+import Avatar from '@/components/ui/Avatar';
 
 const NAV = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -28,7 +29,7 @@ function AdminThemeToggle() {
 }
 
 export default function AdminLayout() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, profile, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -61,7 +62,7 @@ export default function AdminLayout() {
 
       {/* Sidebar */}
       <aside className={cn(
-        'admin-sidebar fixed top-0 left-0 bottom-0 w-64 z-50 border-r flex flex-col transition-transform duration-300 lg:translate-x-0',
+        'admin-sidebar fixed top-0 left-0 bottom-0 w-64 z-50 border-r flex flex-col transition-transform duration-300 md:translate-x-0',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       )}>
         {/* Logo */}
@@ -96,12 +97,10 @@ export default function AdminLayout() {
         <div className="p-4 border-t border-white/8">
           <AdminThemeToggle />
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 text-xs font-bold">
-              A
-            </div>
+            <Avatar src={profile?.avatar_url} name={profile?.display_name || profile?.username || user?.email || 'Admin'} size={36} />
             <div className="min-w-0">
-              <p className="text-sm font-medium text-white truncate">Admin</p>
-              <p className="text-xs text-[#72727E] truncate">CAM Platform</p>
+              <p className="text-sm font-medium text-[var(--ink)] truncate">{profile?.display_name || profile?.username || 'Admin'}</p>
+              <p className="text-xs text-[var(--ink-muted)] truncate">{user?.email}</p>
             </div>
           </div>
           <Link to="/" className="block mt-2 text-xs text-[#72727E] hover:text-white transition-colors text-center py-2">
@@ -111,9 +110,9 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
         {/* Top bar mobile */}
-        <header className="admin-mobile-header lg:hidden h-14 border-b flex items-center px-4 gap-3 sticky top-0 z-30">
+        <header className="admin-mobile-header md:hidden h-14 border-b flex items-center px-4 gap-3 sticky top-0 z-30">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 text-[#A8A8B3]">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -121,7 +120,12 @@ export default function AdminLayout() {
           </button>
           <CamLogo className="cam-logo-3--admin" />
           <span className="text-sm font-semibold">Admin</span>
-          <AdminThemeToggle />
+          <div className="ml-auto flex items-center gap-2">
+            <AdminThemeToggle />
+            <Link to="/profile" aria-label="Profile" title="Profile" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--rule)]">
+              <Avatar src={profile?.avatar_url} name={profile?.display_name || profile?.username || 'Admin'} size={32} />
+            </Link>
+          </div>
         </header>
 
         <main className="flex-1 p-6 lg:p-8">
