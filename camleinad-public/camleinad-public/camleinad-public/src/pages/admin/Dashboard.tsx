@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
 import FetchError from '@/components/ui/FetchError';
+import Avatar from '@/components/ui/Avatar';
 import type { Message } from '@/types';
 
 interface Stats { releases: number; tracks: number; videos: number; gallery: number; news: number; messages: number; bookings: number; }
@@ -207,9 +208,12 @@ export default function AdminDashboard() {
               {recentMessages.map((m, i) => (
                 <div key={m.id} className={`px-5 py-4 ${i > 0 ? 'border-t border-white/5' : ''}`}>
                   <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{m.name}</p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar src={null} name={m.name || m.email || '?'} size={28} />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white truncate">{m.name || m.email || '?'}</p>
                       <p className="text-xs text-[#72727E] truncate">{m.subject || m.message?.slice(0, 60)}</p>
+                      </div>
                     </div>
                     <div className="flex-shrink-0 text-right">
                       <span className={`text-xs px-2 py-0.5 rounded-full ${m.status === 'NEW' ? 'bg-violet-500/20 text-violet-400' : 'bg-white/5 text-[#72727E]'}`}>
