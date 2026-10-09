@@ -51,7 +51,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: profileData, error: profileError } = await anonClient
+    const adminClient = createClient(env.VITE_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+    const { data: profileData, error: profileError } = await adminClient
       .from('profiles')
       .select('role')
       .eq('id', userData.user.id)
@@ -67,7 +68,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       return Response.json({ error: 'File too large. Max 25 MB.' }, { status: 413 });
     }
 
-    const adminClient = createClient(env.VITE_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
     const { error: uploadError } = await adminClient.storage
       .from(bucket)
       .upload(path, bytes, {

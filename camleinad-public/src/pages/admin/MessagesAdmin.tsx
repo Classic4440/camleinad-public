@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils';
 import FetchError from '@/components/ui/FetchError';
+import Avatar from '@/components/ui/Avatar';
 import type { BookingRequest, Message } from '@/types';
 
 export default function MessagesAdmin() {
@@ -60,9 +61,12 @@ export default function MessagesAdmin() {
           {(tab === 'messages' ? messages : bookings).map((item, i) => (
             <div key={item.id} className={`px-5 py-4 ${i > 0 ? 'border-t border-white/5' : ''}`}>
               <div className="flex items-start justify-between gap-4 mb-2">
-                <div>
-                  <p className="text-sm font-medium text-white">{item.name}</p>
-                  <p className="text-xs text-[#72727E]">{item.email} {item.phone && `· ${item.phone}`}</p>
+                <div className="flex min-w-0 items-start gap-3">
+                  <Avatar src={null} name={item.name || item.email || '?'} size={32} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-white">{item.name || item.email || '?'}</p>
+                    <p className="text-xs text-[#72727E]">{item.email} {item.phone && `· ${item.phone}`}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <select value={item.status} onChange={e => updateStatus(tab === 'messages' ? 'messages' : 'booking_requests', item.id, e.target.value)}
