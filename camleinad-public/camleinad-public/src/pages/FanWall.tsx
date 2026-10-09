@@ -43,8 +43,17 @@ export default function FanWallPage() {
             setLoading(true);
             setLoadError(false);
             const [postsResult, tracksResult] = await Promise.all([
-                supabase.from('fan_wall_posts').select('*, profile:profiles!fan_wall_posts_user_id_fkey(username, display_name, avatar_url), track:tracks_public!fan_wall_posts_track_id_fkey(id,title,track_number,release:releases!tracks_release_id_fkey(title,slug))').order('created_at', { ascending: false }).limit(100),
-                supabase.from('tracks_public').select('id,title,release:releases!tracks_release_id_fkey(title,slug)').eq('status', 'RELEASED').order('track_number'),
+                supabase.from('fan_wall_posts').select(`
+                    *,
+                    profile:profiles!fan_wall_posts_user_id_fkey(username, display_name, avatar_url),
+                    release:releases!fan_wall_posts_release_id_fkey(id, title, slug, artwork_url),
+                    track:tracks!fan_wall_posts_track_id_fkey(id, title, track_number, release:releases!tracks_release_id_fkey(id, title, slug, artwork_url))
+                `).order('created_at', { ascending: false }).limit(100),
+                supabase.from('tracks_public').select(`
+                    id,
+                    title,
+                    release:releases!tracks_release_id_fkey(id, title, slug, artwork_url)
+                `).eq('status', 'RELEASED').order('track_number'),
             ]);
             if (!active) return;
             if (postsResult.error) {
