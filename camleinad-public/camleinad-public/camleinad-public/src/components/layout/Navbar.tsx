@@ -14,6 +14,7 @@ const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About' },
   { href: '/music', label: 'Music' },
+  { href: '/producers-cut', label: "Producer's Cut" },
   { href: '/news', label: 'News' },
 ];
 
