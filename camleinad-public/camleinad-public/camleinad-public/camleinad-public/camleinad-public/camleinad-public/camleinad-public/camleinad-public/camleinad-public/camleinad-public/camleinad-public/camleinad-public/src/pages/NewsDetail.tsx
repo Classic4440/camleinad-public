@@ -69,6 +69,8 @@ export default function NewsDetailPage() {
     </div>
   );
 
+  const cover = article.cover_url || article.cover_image_url;
+
   return (
     <PageTransition>
       <div className="editorial-page editorial-page--reading">
@@ -86,8 +88,8 @@ export default function NewsDetailPage() {
           <span>{article.author}</span>
         </div>
 
-        {((article as NewsArticle & { cover_url?: string | null }).cover_url ?? article.cover_image_url) && (
-          <img src={((article as NewsArticle & { cover_url?: string | null }).cover_url ?? article.cover_image_url) || ''} alt={`${article.title} article artwork`} width={1280} height={720} loading="lazy" className="news-detail__cover aspect-[16/9] w-full object-cover" />
+        {cover && (
+          <img src={cover} alt={`${article.title} article artwork`} width={1280} height={720} loading="lazy" className="news-detail__cover aspect-[16/9] w-full object-cover" />
         )}
 
         {article.body && (
