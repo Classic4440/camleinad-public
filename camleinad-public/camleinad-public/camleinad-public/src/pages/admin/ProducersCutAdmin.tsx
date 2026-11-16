@@ -36,6 +36,11 @@ const EMPTY_FORM: PackForm = {
 };
 
 const FORM_INPUT = 'w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white focus:border-violet-500/50 focus:outline-none';
+const DUPLICATE_TITLE_MESSAGE = 'A pack with this title already exists. Please add a version number (e.g., Vol. 2) or change the title.';
+
+function sanitizeFileName(str: string) {
+  return str.replace(/[^a-z0-9]/gi, '_').replace(/_+/g, '_').toLowerCase();
+}
 
 export default function ProducersCutAdmin() {
   const [packs, setPacks] = useState<ProducerPack[]>([]);
@@ -63,6 +68,21 @@ export default function ProducersCutAdmin() {
   }
 
   useEffect(() => { void load(); }, []);
+
+  async function hasDuplicateTitle(title: string) {
+    if (editing || !title) return false;
+    const { data: existing, error } = await supabase
+      .from('producer_packs')
+      .select('id')
+      .eq('title', title)
+      .maybeSingle();
+    if (error) {
+      toast.error(`Could not check for duplicate pack titles: ${error.message}`);
+      return true;
+    }
+    if (existing) toast.error(DUPLICATE_TITLE_MESSAGE);
+    return existing !== null;
+  }
 
   function startCreate() {
     setEditing(null);
@@ -97,6 +117,12 @@ export default function ProducersCutAdmin() {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
+    const title = form.title.trim();
+    if (!editing && title && await hasDuplicateTitle(title)) return;
+    if (field !== 'cover_url' && !title) {
+      toast.error('Enter a pack title before uploading audio or download files.');
+      return;
+    }
     if (file.size > 25 * 1024 * 1024) {
       toast.error('File too large. Max 25 MB.');
       return;
@@ -112,7 +138,14 @@ export default function ProducersCutAdmin() {
 
     const extension = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin';
     const bucket = field === 'cover_url' ? 'album-art' : 'producer-files';
-    const path = `producer-packs/${Date.now()}-${field}.${extension}`;
+    const cleanTitle = sanitizeFileName(title);
+    const cleanKey = sanitizeFileName(form.musical_key || '');
+    const bpm = sanitizeFileName(form.bpm || '');
+    const path = field === 'download_url'
+      ? `downloads/${cleanTitle}_${bpm}BPM_${cleanKey}.${extension}`
+      : field === 'audio_preview_url'
+        ? `previews/${cleanTitle}_${bpm}BPM_preview.${extension}`
+        : `producer-packs/${Date.now()}-${field}.${extension}`;
     setUploadingField(field);
     try {
       const { publicUrl } = await upload({
@@ -139,6 +172,7 @@ export default function ProducersCutAdmin() {
       toast.error('Title is required.');
       return;
     }
+    if (await hasDuplicateTitle(title)) return;
     if (bpm !== null && (!Number.isInteger(bpm) || bpm < 1 || bpm > 999)) {
       toast.error('BPM must be a whole number between 1 and 999.');
       return;
