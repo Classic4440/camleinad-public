@@ -12,6 +12,7 @@ const EDITABLE_KEYS = [
   { key: 'artist_genre', label: 'Primary Genre', group: 'Identity' },
   { key: 'artist_genre_secondary', label: 'Secondary Genre', group: 'Identity' },
   { key: 'contact_email', label: 'Contact Email', group: 'Identity' },
+  { key: 'support_link', label: 'Support Link', group: 'Support' },
   { key: 'hero_eyebrow', label: 'Hero Eyebrow Text', group: 'Homepage' },
   { key: 'hero_subtitle', label: 'Hero Subtitle', group: 'Homepage' },
   { key: 'hero_description', label: 'Hero Description', group: 'Homepage' },
@@ -32,7 +33,7 @@ const EDITABLE_KEYS = [
 const LONG_TEXT_KEYS = ['artist_bio_full', 'artist_story', 'artist_timeline', 'ai_human_text', 'seo_description'];
 const ANNOUNCEMENT_TIME_KEYS = ['announcement_start_at', 'announcement_end_at'];
 
-const GROUPS = ['Identity', 'Homepage', 'About', 'SEO', 'Announcement'];
+const GROUPS = ['Identity', 'Homepage', 'About', 'SEO', 'Announcement', 'Support'];
 
 function toDatetimeLocal(value: string) {
   if (!value) return '';
@@ -66,6 +67,7 @@ export default function SiteContent() {
         ...map,
         record_label_name: map.record_label_name || DEFAULT_RECORD_LABEL_NAME,
         label_short_form: map.label_short_form || DEFAULT_LABEL_SHORT_FORM,
+        support_link: map.support_link || 'https://www.buymeacoffee.com/camleinad',
       });
       setLoading(false);
     }
