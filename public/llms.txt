@@ -43,4 +43,5 @@ Streaming and social URLs are configured in the site's `social_links` table and 
 - [Gallery](https://camleinad.pages.dev/gallery)
 - [News](https://camleinad.pages.dev/news)
 - [Contact](https://camleinad.pages.dev/contact)
+- [Producer's Cut — FL Studio beats, MIDI files, and sample packs](https://camleinad.pages.dev/producers-cut)
 
