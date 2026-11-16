@@ -47,8 +47,15 @@ export default function FanWallPage() {
                 supabase.from('tracks_public').select('id,title,release:releases(title,slug)').eq('status', 'RELEASED').order('track_number'),
             ]);
             if (!active) return;
-            if (postsResult.error) setLoadError(true);
-            else setPosts((postsResult.data || []) as FanWallPost[]);
+            if (postsResult.error) {
+                console.error('[FanWall] Fetch failed:', postsResult.error);
+                setLoadError(true);
+            } else {
+                setPosts((postsResult.data || []) as FanWallPost[]);
+            }
+            if (tracksResult.error) {
+                console.error('[FanWall] Tracks fetch failed:', tracksResult.error);
+            }
             setTracks((tracksResult.data || []) as WallTrack[]);
             setLoading(false);
         }

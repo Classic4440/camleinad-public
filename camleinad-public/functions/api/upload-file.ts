@@ -4,7 +4,7 @@ interface Env {
   SUPABASE_SERVICE_ROLE_KEY: string;
 }
 
-const ALLOWED_BUCKETS = new Set(['audio-files', 'teaser-audio', 'album-art', 'gallery', 'avatars', 'video-files']);
+const ALLOWED_BUCKETS = new Set(['audio-files', 'teaser-audio', 'album-art', 'gallery', 'avatars', 'video-files', 'producer-files']);
 
 function base64ToBytes(base64: string): Uint8Array {
   const normalized = base64.replace(/\s/g, '');
