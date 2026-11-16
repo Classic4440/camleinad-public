@@ -18,21 +18,44 @@ const navLinks = [
 ];
 
 function ThemeToggle() {
-  const { theme, cycleTheme } = useTheme();
-  const themeOrder: SiteTheme[] = ['paper', 'mist', 'ink', 'ember'];
-  const nextTheme = themeOrder[(themeOrder.indexOf(theme) + 1) % themeOrder.length];
+  const { theme, setTheme } = useTheme();
+  const themeOptions: { value: SiteTheme; label: string }[] = [
+    { value: 'paper', label: 'Paper' },
+    { value: 'mist', label: 'Mist' },
+    { value: 'ink', label: 'Ink' },
+    { value: 'ember', label: 'Ember' },
+  ];
+  const currentLabel = themeOptions.find(option => option.value === theme)?.label ?? 'Paper';
   const Icon = theme === 'ink' || theme === 'ember' ? Moon : Sun;
 
   return (
-    <button
-      type="button"
-      onClick={cycleTheme}
-      aria-label={`Switch to ${nextTheme} theme`}
-      title={`Switch to ${nextTheme} theme`}
-      className="w-9 h-9 inline-flex items-center justify-center rounded-lg glass border border-white/10 text-[#A8A8B3] hover:text-white hover:border-violet-400/40 transition-colors"
-    >
-      <Icon aria-hidden="true" className="w-4 h-4" />
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Current theme: ${currentLabel}`}
+          title={`Current theme: ${currentLabel}`}
+          className="w-9 h-9 inline-flex items-center justify-center rounded-lg glass border border-white/10 text-[#A8A8B3] hover:text-white hover:border-violet-400/40 transition-colors"
+        >
+          <Icon aria-hidden="true" className="w-4 h-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="z-[60] w-44 border-[var(--rule)] bg-[var(--base)] text-[var(--ink)]">
+        {themeOptions.map(option => (
+          <DropdownMenuItem
+            key={option.value}
+            onSelect={() => setTheme(option.value)}
+            className={cn(
+              'cursor-pointer text-[var(--ink)] focus:bg-[var(--surface)] focus:text-[var(--ink)]',
+              theme === option.value && 'bg-[var(--surface)]'
+            )}
+          >
+            <span>{option.label}</span>
+            {theme === option.value && <span className="ml-auto text-[var(--accent)]">●</span>}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

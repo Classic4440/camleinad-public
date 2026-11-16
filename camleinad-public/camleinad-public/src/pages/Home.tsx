@@ -54,7 +54,7 @@ export default function HomePage() {
       setLoading(true);
       setLoadError(false);
       const [releaseResult, upcomingResult, newsResult, socialsResult] = await Promise.all([
-        supabase.from('releases').select('*').eq('status', 'RELEASED').order('release_date', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('releases').select('*').eq('status', 'RELEASED').order('release_date', { ascending: false, nullsFirst: false }).limit(1).maybeSingle(),
         supabase.from('releases').select('*').eq('status', 'UPCOMING').eq('show_upcoming_publicly', true).order('release_date', { ascending: true }).limit(1).maybeSingle(),
         supabase.from('news').select('*').eq('is_published', true).order('published_at', { ascending: false }).limit(2),
         supabase.from('social_links').select('*').eq('is_active', true).order('sort_order'),

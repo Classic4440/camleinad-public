@@ -104,21 +104,37 @@ function PackCard({ pack, index }: { pack: ProducerPack; index: number }) {
           <span>{pack.musical_key || 'KEY —'}</span>
         </div>
         <AudioPreview src={pack.audio_preview_url} title={pack.title} />
-        {pack.download_url ? (
+        {pack.is_free ? (
+          pack.download_url ? (
+            <a
+              href={pack.download_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#B6FF00] px-4 text-sm font-bold text-[#121212] transition-colors hover:bg-[#caff42]"
+            >
+              <ArrowDownToLine aria-hidden="true" className="h-4 w-4" />
+              Free Download
+              <ArrowUpRight aria-hidden="true" className="ml-auto h-4 w-4 opacity-60" />
+            </a>
+          ) : (
+            <button type="button" disabled className="flex min-h-12 w-full items-center justify-center rounded-xl border border-white/10 text-sm text-white/40 disabled:cursor-not-allowed">
+              Download coming soon
+            </button>
+          )
+        ) : pack.payment_url?.trim() ? (
           <a
-            href={pack.download_url}
+            href={pack.payment_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#B6FF00] px-4 text-sm font-bold text-[#121212] transition-colors hover:bg-[#caff42]"
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-[#121212] transition-colors hover:bg-[#f1d58a]"
           >
-            <ArrowDownToLine aria-hidden="true" className="h-4 w-4" />
-            {pack.is_free ? 'Free Download' : `$${Number(pack.price).toFixed(2)} · Get Pack`}
+            Buy for ${Number(pack.price).toFixed(2)}
             <ArrowUpRight aria-hidden="true" className="ml-auto h-4 w-4 opacity-60" />
           </a>
         ) : (
-          <div className="flex min-h-12 items-center justify-center rounded-xl border border-white/10 text-sm text-white/40">
-            Download coming soon
-          </div>
+          <button type="button" disabled className="flex min-h-12 w-full items-center justify-center rounded-xl border border-white/10 text-sm text-white/40 disabled:cursor-not-allowed">
+            Coming Soon
+          </button>
         )}
       </div>
     </article>

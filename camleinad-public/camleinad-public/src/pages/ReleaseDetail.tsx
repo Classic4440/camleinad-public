@@ -14,7 +14,7 @@ import type { PlayerTrack, Release, Track, StreamingLink, Comment } from '@/type
 import { getAudioUrl, getStatusLabel, getStatusClass, getTypeLabel, formatDate, cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { DEFAULT_LABEL_SHORT_FORM, DEFAULT_RECORD_LABEL_NAME } from '@/lib/utils';
+import { DEFAULT_RECORD_LABEL_NAME } from '@/lib/utils';
 import { BookOpenText, ListPlus, Lock, X } from 'lucide-react';
 import { Copy, Share2 } from 'lucide-react';
 
@@ -24,7 +24,6 @@ export default function ReleaseDetailPage() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [links, setLinks] = useState<StreamingLink[]>([]);
   const [recordLabelName, setRecordLabelName] = useState(DEFAULT_RECORD_LABEL_NAME);
-  const [labelShortForm, setLabelShortForm] = useState(DEFAULT_LABEL_SHORT_FORM);
   const [comments, setComments] = useState<Comment[]>([]);
   const [trackComments, setTrackComments] = useState<Record<string, Comment[]>>({});
   const [openTrackId, setOpenTrackId] = useState<string | null>(null);
@@ -62,7 +61,7 @@ export default function ReleaseDetailPage() {
           .eq('release_id', rel.id).order('track_number'),
         supabase.from('streaming_links').select('*').eq('release_id', rel.id),
         supabase.from('comments').select('*, profile:profiles!comments_user_id_profiles_fkey(username, display_name, avatar_url)').eq('release_id', rel.id).eq('is_hidden', false).order('created_at'),
-        supabase.from('site_settings').select('key,value').in('key', ['record_label_name', 'label_short_form']),
+        supabase.from('site_settings').select('key,value').eq('key', 'record_label_name'),
       ]);
       if (!active) return;
       const publicTracks = (tracksResult.data || []) as unknown as Track[];
@@ -88,7 +87,6 @@ export default function ReleaseDetailPage() {
       }, {}));
       labelSettingsResult.data?.forEach(setting => {
         if (setting.key === 'record_label_name' && setting.value) setRecordLabelName(setting.value);
-        if (setting.key === 'label_short_form' && setting.value) setLabelShortForm(setting.value);
       });
       setLoading(false);
     }
@@ -244,7 +242,7 @@ export default function ReleaseDetailPage() {
     '@context': 'https://schema.org',
     '@type': release.type === 'SINGLE' ? 'MusicRecording' : 'MusicAlbum',
     name: release.title,
-    byArtist: { '@type': 'MusicGroup', name: 'Cam Leinad', alternateName: labelShortForm },
+    byArtist: { '@type': 'MusicGroup', name: 'Cam Leinad' },
     recordLabel: recordLabelName,
     ...(isReleased && release.release_date ? { datePublished: release.release_date } : {}),
     ...(artwork ? { image: artwork } : {}),
@@ -286,7 +284,7 @@ export default function ReleaseDetailPage() {
 
             <h1 className="page-title mb-2">{release.title}</h1>
             <p className="text-lg text-[#A8A8B3] mb-6">Cam Leinad</p>
-            <p className="text-sm text-[#72727E] mb-2">{isReleased ? 'Released' : 'Coming soon'} on {recordLabelName} ({labelShortForm})</p>
+            <p className="text-sm text-[#72727E] mb-2">{isReleased ? 'Released' : 'Coming soon'} on {recordLabelName}</p>
             <div className="text-xs text-[#72727E] mb-6 space-y-1" aria-label="Copyright information">
               <p>℗ 2026 {recordLabelName}</p>
             </div>

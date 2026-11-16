@@ -19,6 +19,7 @@ const AuthPage = lazy(() => import('@/pages/Auth'));
 const ProfilePage = lazy(() => import('@/pages/Profile'));
 const FanWallPage = lazy(() => import('@/pages/FanWall'));
 const PressPage = lazy(() => import('@/pages/Press'));
+const ProducersCutPage = lazy(() => import('@/pages/ProducersCut'));
 const NotFoundPage = lazy(() => import('@/pages/NotFound'));
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('@/pages/admin/Dashboard'));
@@ -29,6 +30,7 @@ const GalleryAdmin = lazy(() => import('@/pages/admin/GalleryAdmin'));
 const MessagesAdmin = lazy(() => import('@/pages/admin/MessagesAdmin'));
 const SiteContent = lazy(() => import('@/pages/admin/SiteContent'));
 const SocialLinksAdmin = lazy(() => import('@/pages/admin/SocialLinksAdmin'));
+const ProducersCutAdmin = lazy(() => import('@/pages/admin/ProducersCutAdmin'));
 
 export default function App() {
   return (
@@ -53,6 +55,7 @@ export default function App() {
               <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
               <Route path="/fan-wall" element={<Layout><FanWallPage /></Layout>} />
               <Route path="/press" element={<Layout><PressPage /></Layout>} />
+              <Route path="/producers-cut" element={<ProducersCutPage />} />
 
               {/* Main public routes */}
               <Route path="/" element={<Layout><HomePage /></Layout>} />
@@ -69,6 +72,7 @@ export default function App() {
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="releases" element={<ReleasesAdmin />} />
+                <Route path="producers-cut" element={<ProducersCutAdmin />} />
                 <Route path="news" element={<NewsAdmin />} />
                 <Route path="videos" element={<VideosAdmin />} />
                 <Route path="gallery" element={<GalleryAdmin />} />

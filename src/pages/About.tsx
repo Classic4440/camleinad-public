@@ -54,6 +54,11 @@ export default function AboutPage() {
                 </div>
               </section>
               <section className="pt-2">
+                <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--ink-muted)]">The music</p>
+                <h2 className="mb-4 text-3xl leading-none text-[var(--ink)]" style={{ fontFamily: 'Fraunces, Georgia, serif' }}>The music</h2>
+                <p className="text-base leading-7 text-[var(--ink-muted)]" style={{ fontFamily: 'Inter Tight, sans-serif' }}>Beyond his artist catalog, Cam also produces and sells instrumentals and sample packs via the Producer&apos;s Cut.</p>
+              </section>
+              <section className="pt-2">
                 <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--ink-muted)]">The story</p>
                 <h2 className="mb-4 text-3xl leading-none text-[var(--ink)]" style={{ fontFamily: 'Fraunces, Georgia, serif' }}>The story</h2>
                 <p className="text-base leading-7 text-[var(--ink-muted)]" style={{ fontFamily: 'Inter Tight, sans-serif' }}>{settings.artist_story || 'Cam Leinad is “Daniel Mac” reversed — literally and musically. It is a name built from the person behind the songs, turned around and made into a stage name.'}</p>
