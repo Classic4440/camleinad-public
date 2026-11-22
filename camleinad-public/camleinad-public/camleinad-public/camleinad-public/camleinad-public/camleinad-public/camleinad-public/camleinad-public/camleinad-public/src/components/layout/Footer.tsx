@@ -50,6 +50,7 @@ export default function Footer() {
       <nav className="site-footer__socials" aria-label="Main navigation">
         <Link to="/" className="text-link">Home</Link>
         <Link to="/music" className="text-link">Music</Link>
+        <Link to="/producers-cut" className="text-link">Producer&apos;s Cut</Link>
         <Link to="/videos" className="text-link">Videos</Link>
         <Link to="/gallery" className="text-link">Gallery</Link>
         <Link to="/news" className="text-link">News</Link>

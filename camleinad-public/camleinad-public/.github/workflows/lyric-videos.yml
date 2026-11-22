@@ -1,0 +1,69 @@
+name: Lyric videos
+
+# Renders a lyric video (ffmpeg, no generative video models) for every released track that
+# has an audio file and lyrics, uploads it to Supabase storage (video-files/lyric-videos/)
+# and publishes it in the `videos` table. The site's Videos page reads that table live,
+# so new videos show up on camleinad.pages.dev without a redeploy.
+#
+# One-time setup: add the repo secret SUPABASE_SERVICE_ROLE_KEY
+# (Supabase Dashboard -> Project Settings -> API -> service_role key).
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Track IDs to render, comma-separated (blank = every new or changed track)"
+        required: false
+        default: ""
+      force:
+        description: "Re-render even if the video is already up to date"
+        type: boolean
+        default: false
+      dry_run:
+        description: "List what would be rendered and change nothing"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "17 3 * * 1" # weekly: picks up newly released tracks and edited lyrics
+
+concurrency:
+  group: lyric-videos
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ffmpeg and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg fonts-dejavu-core
+
+      - name: Cache the lyric-alignment model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/whisper
+          key: whisper-small-v1
+
+      - name: Build lyric videos
+        env:
+          SUPABASE_URL: https://wptaddzloshnaecnrfyv.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ONLY: ${{ inputs.only }}
+          FORCE: ${{ inputs.force }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: node scripts/lyric-videos/build.mjs

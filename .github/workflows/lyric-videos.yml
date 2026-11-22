@@ -23,6 +23,10 @@ on:
         description: "List what would be rendered and change nothing"
         type: boolean
         default: false
+      check_lyrics:
+        description: "Check lyrics against the audio (no videos made): lists lines that do not match what is sung"
+        type: boolean
+        default: false
   schedule:
     - cron: "17 3 * * 1" # weekly: picks up newly released tracks and edited lyrics
 
@@ -66,4 +70,5 @@ jobs:
           ONLY: ${{ inputs.only }}
           FORCE: ${{ inputs.force }}
           DRY_RUN: ${{ inputs.dry_run }}
+          CHECK: ${{ inputs.check_lyrics }}
         run: node scripts/lyric-videos/build.mjs

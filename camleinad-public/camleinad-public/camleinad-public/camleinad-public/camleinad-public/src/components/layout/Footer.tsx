@@ -76,7 +76,7 @@ export default function Footer() {
         <a href={supportLink} target="_blank" rel="noopener noreferrer" className="text-link">Leave a Tip ❤️</a>
       </section>
       {loadError && <p role="alert" className="site-footer__error">Couldn’t load some footer details. <button type="button" onClick={() => setRetryCount(count => count + 1)} className="text-link">Retry</button></p>}
-      <p className="site-footer__copyright">© 2026 Cam All May (CAM). All rights reserved.</p>
+      <p className="site-footer__copyright">© 2026 Cam All May. All rights reserved.</p>
       <p className="site-footer__copyright">Pop. Easy Listening. Made with AI. Built with heart.</p>
     </footer>
   );
