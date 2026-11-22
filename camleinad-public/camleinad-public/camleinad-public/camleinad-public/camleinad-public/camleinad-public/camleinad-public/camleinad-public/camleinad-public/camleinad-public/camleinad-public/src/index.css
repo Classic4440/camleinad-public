@@ -197,6 +197,12 @@
   animation: none;
 }
 
+.home-section {
+  width: min(100%, 1200px);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 2.5rem);
+}
+
 .waveform-bar {
   animation: none;
 }
@@ -268,6 +274,60 @@
   --cam-text-muted: var(--ink-muted);
 }
 
+:root[data-theme="mist"] {
+  color-scheme: light;
+  --base: #E8ECF0;
+  --ink: #12151A;
+  --ink-muted: #5C6570;
+  --accent: #3D5A73;
+  --rule: rgba(18, 21, 26, 0.12);
+  --background: 210 20% 93%;
+  --foreground: 215 18% 14%;
+  --card: 210 18% 92%;
+  --card-foreground: 215 18% 14%;
+  --popover: 210 18% 92%;
+  --popover-foreground: 215 18% 14%;
+  --primary: 210 22% 39%;
+  --primary-foreground: 210 20% 93%;
+  --secondary: 210 18% 90%;
+  --secondary-foreground: 215 18% 14%;
+  --muted: 210 18% 90%;
+  --muted-foreground: 215 12% 38%;
+  --accent-foreground: 210 20% 93%;
+  --destructive: 210 22% 39%;
+  --destructive-foreground: 210 20% 93%;
+  --border: rgba(18, 21, 26, 0.12);
+  --input: 210 18% 90%;
+  --ring: 210 22% 39%;
+  --radius: 0.25rem;
+  --sidebar-background: 210 20% 93%;
+  --sidebar-foreground: 215 18% 14%;
+  --sidebar-primary: 210 22% 39%;
+  --sidebar-primary-foreground: 210 20% 93%;
+  --sidebar-accent: 210 18% 90%;
+  --sidebar-accent-foreground: 215 18% 14%;
+  --sidebar-border: 210 15% 80%;
+  --sidebar-ring: 210 22% 39%;
+  --bg: var(--base);
+  --surface: rgba(18, 21, 26, 0.04);
+  --text: var(--ink);
+  --text-muted: var(--ink-muted);
+  --cam-black: var(--base);
+  --cam-black-2: #DEE3E9;
+  --cam-surface: #DEE3E9;
+  --cam-surface-2: #D4DAE2;
+  --cam-glass: transparent;
+  --cam-glass-border: var(--rule);
+  --cam-violet: var(--accent);
+  --cam-violet-light: var(--accent);
+  --cam-cyan: var(--accent);
+  --cam-coral: var(--accent);
+  --cam-green: var(--accent);
+  --cam-text: var(--ink);
+  --cam-text-secondary: var(--ink-muted);
+  --cam-text-muted: var(--ink-muted);
+}
+
 :root[data-theme="ink"] {
   color-scheme: dark;
   --base: #1A1714;
@@ -310,6 +370,60 @@
   --cam-black-2: #241F1A;
   --cam-surface: #241F1A;
   --cam-surface-2: #2D2620;
+  --cam-glass: transparent;
+  --cam-glass-border: var(--rule);
+  --cam-violet: var(--accent);
+  --cam-violet-light: var(--accent);
+  --cam-cyan: var(--accent);
+  --cam-coral: var(--accent);
+  --cam-green: var(--accent);
+  --cam-text: var(--ink);
+  --cam-text-secondary: var(--ink-muted);
+  --cam-text-muted: var(--ink-muted);
+}
+
+:root[data-theme="ember"] {
+  color-scheme: dark;
+  --base: #140F0C;
+  --ink: #F2E8DC;
+  --ink-muted: #B8A99A;
+  --accent: #D4894A;
+  --rule: rgba(242, 232, 220, 0.16);
+  --background: 20 25% 8%;
+  --foreground: 34 28% 90%;
+  --card: 20 25% 10%;
+  --card-foreground: 34 28% 90%;
+  --popover: 20 25% 10%;
+  --popover-foreground: 34 28% 90%;
+  --primary: 25 55% 57%;
+  --primary-foreground: 20 25% 8%;
+  --secondary: 20 20% 14%;
+  --secondary-foreground: 34 28% 90%;
+  --muted: 20 20% 14%;
+  --muted-foreground: 28 18% 72%;
+  --accent-foreground: 20 25% 8%;
+  --destructive: 25 55% 57%;
+  --destructive-foreground: 20 25% 8%;
+  --border: rgba(242, 232, 220, 0.16);
+  --input: 20 20% 14%;
+  --ring: 25 55% 57%;
+  --radius: 0.25rem;
+  --sidebar-background: 20 25% 8%;
+  --sidebar-foreground: 34 28% 90%;
+  --sidebar-primary: 25 55% 57%;
+  --sidebar-primary-foreground: 20 25% 8%;
+  --sidebar-accent: 20 20% 14%;
+  --sidebar-accent-foreground: 34 28% 90%;
+  --sidebar-border: 18 18% 20%;
+  --sidebar-ring: 25 55% 57%;
+  --bg: var(--base);
+  --surface: rgba(242, 232, 220, 0.05);
+  --text: var(--ink);
+  --text-muted: var(--ink-muted);
+  --cam-black: var(--base);
+  --cam-black-2: #1C1612;
+  --cam-surface: #1C1612;
+  --cam-surface-2: #241C16;
   --cam-glass: transparent;
   --cam-glass-border: var(--rule);
   --cam-violet: var(--accent);

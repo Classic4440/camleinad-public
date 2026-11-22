@@ -30,9 +30,9 @@ export default function AboutPage() {
 
   const configuredBio = settings.artist_bio_full?.split(/\n\s*\n/).map(paragraph => paragraph.trim()).filter(Boolean) || [];
   const bioParagraphs = configuredBio.length >= 3 ? configuredBio.slice(0, 3) : [
-    settings.artist_bio_full || 'Cam Leinad is the artist name of Daniel Mac, a songwriter and independent pop artist born in Uganda.',
+    settings.artist_bio_full || 'Cam Leinad is the artist name of Muwonge Daniel Mark, born in Uganda and raised across countries including the United Kingdom and South Korea.',
     'His life has taken him from Uganda to the United Kingdom and South Korea. Those changes of place, and the feelings that travel with them, shape the songs.',
-    'He writes about memory, distance, uncertainty, and the small decisions that change a life. “How It Starts” is his debut single.',
+    'He writes about memory, distance, uncertainty, and the small decisions that change a life. His released catalog includes the single “How It Starts,” the six-track EP “Distant Light,” and the 13-track debut album “The Confession.”',
   ];
 
   return (
@@ -56,12 +56,12 @@ export default function AboutPage() {
               <section className="pt-2">
                 <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--ink-muted)]">The story</p>
                 <h2 className="mb-4 text-3xl leading-none text-[var(--ink)]" style={{ fontFamily: 'Fraunces, Georgia, serif' }}>The story</h2>
-                <p className="text-base leading-7 text-[var(--ink-muted)]" style={{ fontFamily: 'Inter Tight, sans-serif' }}>{settings.artist_story || 'Cam Leinad is “Daniel Mac” reversed. It is a name built from the person behind the songs, turned around and made into a stage name. The music starts from real feelings and ordinary details rather than a character.'}</p>
+                <p className="text-base leading-7 text-[var(--ink-muted)]" style={{ fontFamily: 'Inter Tight, sans-serif' }}>{settings.artist_story || 'Cam Leinad is “Daniel Mac” reversed — literally and musically. It is a name built from the person behind the songs, turned around and made into a stage name.'}</p>
               </section>
               <section className="pt-2">
                 <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--ink-muted)]">The label</p>
                 <h2 className="mb-4 text-3xl leading-none text-[var(--ink)]" style={{ fontFamily: 'Fraunces, Georgia, serif' }}>The label</h2>
-                <p className="text-base leading-7 text-[var(--ink-muted)]" style={{ fontFamily: 'Inter Tight, sans-serif' }}>CAM means “Cam All May”: Cam + May, a reference to being born on 16 May 2004. It is both the artist’s short name and the independent label behind the releases.</p>
+                <p className="text-base leading-7 text-[var(--ink-muted)]" style={{ fontFamily: 'Inter Tight, sans-serif' }}>Cam All May is the independent record label behind Cam Leinad’s releases.</p>
               </section>
               <section className="pt-2">
                 <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--ink-muted)]">AI + human creativity</p>
@@ -74,9 +74,9 @@ export default function AboutPage() {
                 <p className="text-base leading-7 text-[var(--ink-muted)]" style={{ fontFamily: 'Inter Tight, sans-serif' }}>{settings.artist_journey || 'The route has been Uganda, the United Kingdom, and South Korea. Moving between places changed what home meant and what memories stayed close. Music became a way to give those experiences a shape.'}</p>
               </section>
               <section className="pt-2">
-                <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--ink-muted)]">The future</p>
-                <h2 className="mb-4 text-3xl leading-none text-[var(--ink)]" style={{ fontFamily: 'Fraunces, Georgia, serif' }}>The future</h2>
-                <p className="text-base leading-7 text-[var(--ink-muted)]" style={{ fontFamily: 'Inter Tight, sans-serif' }}>{settings.artist_future_text || '“Distant Light,” a six-track EP, is scheduled for October 26, 2026. “The Confession,” a 13-track album, is in development. The next songs continue the same work: turning distance, memory, and change into something you can listen to.'}</p>
+                <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--ink-muted)]">The catalog</p>
+                <h2 className="mb-4 text-3xl leading-none text-[var(--ink)]" style={{ fontFamily: 'Fraunces, Georgia, serif' }}>The catalog</h2>
+                <p className="text-base leading-7 text-[var(--ink-muted)]" style={{ fontFamily: 'Inter Tight, sans-serif' }}>{settings.artist_future_text || 'The catalog is fully released: “How It Starts,” the debut single; “Distant Light,” a six-track EP; and “The Confession,” a 13-track debut album released in November 2026. Released independently on Cam All May.'}</p>
               </section>
             </div>
           )}

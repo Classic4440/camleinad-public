@@ -6,10 +6,21 @@ export type SiteTheme = 'paper' | 'mist' | 'ink' | 'ember';
 interface ThemeContextValue {
     theme: SiteTheme;
     cycleTheme: () => void;
+    setTheme: (nextTheme: SiteTheme) => void;
 }
 
 const THEMES: SiteTheme[] = ['paper', 'mist', 'ink', 'ember'];
 const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+function applyTheme(nextTheme: SiteTheme) {
+    document.documentElement.dataset.theme = nextTheme;
+    document.documentElement.classList.toggle('dark', nextTheme === 'ink' || nextTheme === 'ember');
+    try {
+        localStorage.setItem('cam-theme', nextTheme);
+    } catch {
+        // Keep the active session usable if browser storage is unavailable.
+    }
+}
 
 function initialTheme(): SiteTheme {
     let saved: string | null = null;
@@ -28,28 +39,25 @@ function initialTheme(): SiteTheme {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-    const [theme, setTheme] = useState<SiteTheme>(initialTheme);
+    const [theme, setThemeState] = useState<SiteTheme>(initialTheme);
 
     useLayoutEffect(() => {
-        document.documentElement.dataset.theme = theme;
-        document.documentElement.classList.toggle('dark', theme === 'ink' || theme === 'ember');
+        applyTheme(theme);
     }, [theme]);
 
+    function setTheme(nextTheme: SiteTheme) {
+        if (!THEMES.includes(nextTheme)) return;
+        setThemeState(nextTheme);
+    }
+
     function cycleTheme() {
-        setTheme(current => {
+        setThemeState(current => {
             const next = THEMES[(THEMES.indexOf(current) + 1) % THEMES.length];
-            document.documentElement.dataset.theme = next;
-            document.documentElement.classList.toggle('dark', next === 'ink' || next === 'ember');
-            try {
-                localStorage.setItem('cam-theme', next);
-            } catch {
-                // Keep the active session usable if browser storage is unavailable.
-            }
             return next;
         });
     }
 
-    return <ThemeContext.Provider value={{ theme, cycleTheme }}>{children}</ThemeContext.Provider>;
+    return <ThemeContext.Provider value={{ theme, cycleTheme, setTheme }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {

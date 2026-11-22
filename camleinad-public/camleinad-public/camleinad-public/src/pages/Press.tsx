@@ -15,17 +15,21 @@ export default function PressPage() {
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState(false);
     const [retryCount, setRetryCount] = useState(0);
-    const shortBio = settings.artist_bio_short || 'Cam Leinad is the independent pop project of Daniel Mac, a songwriter born in Uganda. His music moves between pop and easy listening, with lyrics grounded in memory, distance, and change.';
+    const shortBio = settings.artist_bio_short || 'Cam Leinad is the artist name of Muwonge Daniel Mark, born in Uganda and raised across countries including the United Kingdom and South Korea. His heartfelt pop blends easy-listening warmth with lyrics about memory, distance, and change.';
     const longBioParagraphs = useMemo(() => {
         const configured = (settings.artist_bio_full || '').split(/\n\s*\n/).map(paragraph => paragraph.trim()).filter(Boolean);
         return configured.length >= 3 ? configured.slice(0, 3) : [
-            settings.artist_bio_full || 'Cam Leinad is the artist name of Daniel Mac, a songwriter born in Uganda. The name is “Daniel Mac” reversed, a simple idea that became the identity for his independent music.',
-            'His life has taken him from Uganda to the United Kingdom and South Korea. The movement between places informs songs about memory, distance, and finding a sense of home.',
-            'His debut single, “How It Starts,” was released in April 2026. The six-track EP “Distant Light” is scheduled for October 26, 2026, with the album “The Confession” in development.',
+            settings.artist_bio_full || 'Cam Leinad is the artist name of Muwonge Daniel Mark, born in Uganda and raised across countries including the United Kingdom and South Korea. Cam Leinad is “Daniel Mac” reversed — literally and musically.',
+            'Blending heartfelt pop melodies with easy-listening warmth, Cam Leinad writes about open hearts, late-night thoughts, and the quiet moments just before life changes.',
+            'The catalog is fully released: the debut single “How It Starts,” the six-track EP “Distant Light,” and the 13-track debut album “The Confession,” released in November 2026. The music is released independently on Cam All May.',
         ];
     }, [settings.artist_bio_full]);
     const recordLabelName = settings.record_label_name || DEFAULT_RECORD_LABEL_NAME;
-    const latestRelease = releases.find(release => release.status === 'RELEASED');
+    const confessionRelease = releases.find(release => release.title.trim().toLowerCase() === 'the confession' && release.status === 'RELEASED');
+    const latestRelease = confessionRelease || releases.find(release => release.status === 'RELEASED');
+    const latestReleaseDate = latestRelease?.title.trim().toLowerCase() === 'the confession'
+        ? 'November 2026'
+        : latestRelease?.release_date ? formatDate(latestRelease.release_date) : '';
     const contactEmail = settings.contact_email || 'camleinad@outlook.com';
 
     useEffect(() => {
@@ -71,7 +75,12 @@ export default function PressPage() {
             addParagraph('Full bio', 15);
             longBioParagraphs.forEach(paragraph => addParagraph(paragraph));
         }
-        if (latestRelease) addParagraph(`Latest release: ${latestRelease.title}${latestRelease.release_date ? ` · ${formatDate(latestRelease.release_date)}` : ''}`);
+        if (latestRelease) {
+            addParagraph(`Latest release: ${latestRelease.title} · ${latestReleaseDate}`);
+            if (latestRelease.title.trim().toLowerCase() === 'the confession') {
+                addParagraph('The Confession is Cam Leinad’s 13-track debut album, released November 2026.');
+            }
+        }
         addParagraph(`Press contact: ${contactEmail}`);
         if (artistPhoto?.image_url) addParagraph(`Artist photo: ${artistPhoto.image_url}`);
         releases.filter(release => release.artwork_url).forEach(release => addParagraph(`${release.title} artwork: ${release.artwork_url}`));
@@ -104,7 +113,7 @@ export default function PressPage() {
                         </div>)}</div> : <p>No releases are available yet.</p>}</section>
                     </section>
                     <aside className="press-facts">
-                        <section><p className="eyebrow">LATEST RELEASE</p>{latestRelease && <><p>{latestRelease.title}</p>{latestRelease.release_date && <p>{formatDate(latestRelease.release_date)}</p>}</>}</section>
+                        <section><p className="eyebrow">LATEST RELEASE</p>{latestRelease && <><p>{latestRelease.title}</p>{latestReleaseDate && <p>{latestReleaseDate}</p>}{latestRelease.title.trim().toLowerCase() === 'the confession' && <p>13-track debut album · Released independently on Cam All May</p>}</>}</section>
                         <section><p className="eyebrow">PRESS BOOKINGS</p><a href={`mailto:${contactEmail}`} className="text-link">{contactEmail}</a></section>
                     </aside>
                 </div>
