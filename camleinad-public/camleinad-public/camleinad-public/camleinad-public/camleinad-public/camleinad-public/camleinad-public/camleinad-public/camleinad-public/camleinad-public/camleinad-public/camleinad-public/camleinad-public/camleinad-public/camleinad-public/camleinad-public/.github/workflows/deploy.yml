@@ -62,5 +62,9 @@ jobs:
           rsync -av --exclude='.git' --exclude='node_modules' ./ camleinad-public/
           cd camleinad-public
           git add .
+          if git diff --cached --quiet; then
+            echo "No changes to mirror to camleinad-public. Skipping commit."
+            exit 0
+          fi
           git commit -m "Sync from camleinad main"
           git push origin main
