@@ -46,6 +46,7 @@ export interface ProducerPack {
   cover_url: string | null;
   audio_preview_url: string | null;
   download_url: string | null;
+  payment_url: string | null;
   is_free: boolean;
   price: number;
   sort_order: number;

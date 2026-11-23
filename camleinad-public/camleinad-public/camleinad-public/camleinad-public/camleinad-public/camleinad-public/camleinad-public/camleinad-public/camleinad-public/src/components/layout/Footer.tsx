@@ -26,16 +26,21 @@ const PLATFORM_ICONS: Record<string, string> = {
 
 export default function Footer() {
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+  const [supportLink, setSupportLink] = useState('https://www.buymeacoffee.com/camleinad');
   const [loadError, setLoadError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let active = true;
     async function load() {
-      const { data, error } = await supabase.from('social_links').select('*').eq('is_active', true).order('sort_order');
+      const [socialResult, settingsResult] = await Promise.all([
+        supabase.from('social_links').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('site_settings').select('value').eq('key', 'support_link').maybeSingle(),
+      ]);
       if (!active) return;
-      setLoadError(!!error);
-      setSocialLinks(data || []);
+      setLoadError(!!(socialResult.error || settingsResult.error));
+      setSocialLinks(socialResult.data || []);
+      setSupportLink(settingsResult.data?.value?.trim() || 'https://www.buymeacoffee.com/camleinad');
     }
     void load();
     return () => { active = false; };
@@ -66,6 +71,10 @@ export default function Footer() {
           return link ? [<a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" title={PLATFORM_ICONS[platform] ? `Open CAM’s ${label} profile` : `Open ${label}`} className="text-link">{label}</a>] : [];
         })}
       </nav>
+      <section className="site-footer__socials" aria-label="Support the Movement">
+        <p className="text-xs font-semibold uppercase tracking-wider">Support the Movement</p>
+        <a href={supportLink} target="_blank" rel="noopener noreferrer" className="text-link">Leave a Tip ❤️</a>
+      </section>
       {loadError && <p role="alert" className="site-footer__error">Couldn’t load some footer details. <button type="button" onClick={() => setRetryCount(count => count + 1)} className="text-link">Retry</button></p>}
       <p className="site-footer__copyright">© 2026 Cam All May (CAM). All rights reserved.</p>
       <p className="site-footer__copyright">Pop. Easy Listening. Made with AI. Built with heart.</p>
