@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export interface UploadOptions {
-  bucket: 'audio-files' | 'teaser-audio' | 'album-art' | 'gallery' | 'avatars' | 'video-files';
+  bucket: 'audio-files' | 'teaser-audio' | 'album-art' | 'gallery' | 'avatars' | 'video-files' | 'producer-files';
   path: string;
   file: File | Blob;
   contentType: string;

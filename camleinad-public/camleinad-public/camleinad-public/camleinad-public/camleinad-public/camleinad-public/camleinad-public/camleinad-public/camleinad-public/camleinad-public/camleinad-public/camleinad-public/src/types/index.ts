@@ -36,6 +36,23 @@ export interface Release {
   streaming_links?: StreamingLink[];
 }
 
+export interface ProducerPack {
+  id: string;
+  title: string;
+  description: string | null;
+  bpm: number | null;
+  musical_key: string | null;
+  genre: string | null;
+  cover_url: string | null;
+  audio_preview_url: string | null;
+  download_url: string | null;
+  is_free: boolean;
+  price: number;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Track {
   id: string;
   release_id: string;

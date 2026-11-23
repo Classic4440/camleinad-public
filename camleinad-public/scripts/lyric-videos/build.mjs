@@ -42,10 +42,12 @@ const LOW_CONF = 0.25; // aligned lines below this match the audio poorly and ar
 const CREDIT_RE = /\(\s*feat\.?[^)]*\)\.?\s*$/i; // "Title (feat. X & Y)." credit line, not sung
 const DIRECTION_RE = /^\(\s*(?:final |last |repeat )?(?:chorus|verse|bridge|hook|intro|outro|instrumental|interlude|refrain)[^)]*\)$/i;
 const TRANSLATION_HEAD_RE = /^\[[^\]]*translation[^\]]*\]$/i;
+const TITLE_RE = /^.{1,80}\s[\u2014\u2013-]\s*Cam Leinad\s*$/i; // "SONG TITLE \u2014 Cam Leinad" header line, not sung
+const isNonLyric = (l) => /^\[[^\]]*\]$/.test(l) || CREDIT_RE.test(l) || DIRECTION_RE.test(l) || TITLE_RE.test(l);
 
 /**
  * Turns the lyrics text into the lines that are actually sung: [{ line, sub? }].
- * Drops [Section] headers, credit lines and stage directions. A "[... Translation ...]" block
+ * Drops [Section] headers, credit lines, title headers and stage directions. A "[... Translation ...]" block
  * is not sung, so it is removed from the sung lines and, when it has the same number of lines
  * as the block it translates, shown as a small subtitle under each sung line (`sub`).
  */
@@ -68,7 +70,7 @@ export function parseLyrics(text) {
     let inTrans = false;
     for (const l of block) {
       if (TRANSLATION_HEAD_RE.test(l)) { inTrans = true; continue; }
-      if (/^\[[^\]]*\]$/.test(l) || CREDIT_RE.test(l) || DIRECTION_RE.test(l)) continue;
+      if (isNonLyric(l)) continue;
       (inTrans ? trans : sung).push(l);
     }
     const entries = sung.map((line) => ({ line }));
@@ -184,6 +186,27 @@ function syncedLines(raw) {
   return lines.length >= 3 ? lines : null;
 }
 
+const norm = (str) => String(str).toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').replace(/\s+/g, ' ').trim();
+
+/**
+ * Timestamps from tracks.lyrics_synced, but only when they can be trusted: every line has a
+ * real time (-1 means "never synced"), and they still match the current lyrics. Otherwise null,
+ * and the lyrics are aligned to the audio instead.
+ */
+export function usableSynced(raw, entries) {
+  if (!Array.isArray(raw) || !raw.length) return null;
+  if (raw.some((x) => !x || !Number.isFinite(Number(x.time)) || Number(x.time) < 0)) return null;
+  const lines = raw
+    .filter((x) => typeof x.line === 'string' && x.line.trim() && !isNonLyric(x.line.trim()))
+    .map((x) => ({ line: x.line.trim(), time: Number(x.time), sub: x.sub, conf: x.conf }))
+    .sort((a, b) => a.time - b.time);
+  if (lines.length < 3) return null;
+  const have = new Set(lines.map((l) => norm(l.line)));
+  const hits = entries.filter((e) => have.has(norm(e.line))).length;
+  if (entries.length && hits / entries.length < 0.9) return null; // lyrics were edited after syncing
+  return lines;
+}
+
 let alignerReady = false;
 let alignerError = null;
 function ensureAligner() {
@@ -265,7 +288,7 @@ async function buildOne(track, release, index, existing) {
     await download(track.audio_url, audio);
     const duration = probeDuration(audio);
 
-    let timed = syncedLines(track.lyrics_synced);
+    let timed = usableSynced(track.lyrics_synced, entries);
     let timing = 'synced';
     let match = null;
     if (!timed) {
@@ -336,10 +359,10 @@ async function main() {
     if (SKIP_TRACK_IDS.has(t.id) && !only.has(t.id)) { summary.skipped.push(`${name}: already has an official lyric video`); continue; }
     if (!t.audio_url) { summary.skipped.push(`${name}: no audio file`); continue; }
     if (parseLyrics(t.lyrics).length < MIN_LYRIC_LINES) { summary.skipped.push(`${name}: no lyrics yet`); continue; }
-    if (CHECK && syncedLines(t.lyrics_synced)) { summary.skipped.push(`${name}: has timestamps (trusted, not checked)`); continue; }
+    if (CHECK && usableSynced(t.lyrics_synced, parseLyrics(t.lyrics))) { summary.skipped.push(`${name}: has timestamps (trusted, not checked)`); continue; }
     const ex = vidByTrack.get(t.id);
     if (!CHECK && !force && ex && ex.source_updated_at && Date.parse(ex.source_updated_at) >= Date.parse(t.updated_at)) { summary.skipped.push(`${name}: up to date`); continue; }
-    if (dry) { summary.built.push(`${name}: would render (${syncedLines(t.lyrics_synced) ? 'synced' : 'needs alignment'})`); continue; }
+    if (dry) { summary.built.push(`${name}: would render (${usableSynced(t.lyrics_synced, parseLyrics(t.lyrics)) ? 'synced' : 'needs alignment'})`); continue; }
     console.log(`\n=== ${name} ===`);
     try {
       const r = await buildOne(t, relById.get(t.release_id), i, ex);
