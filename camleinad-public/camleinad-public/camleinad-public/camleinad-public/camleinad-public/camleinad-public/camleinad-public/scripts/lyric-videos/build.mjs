@@ -15,6 +15,7 @@
  *      ONLY=<track id,track id>  render just these tracks
  *      FORCE=1                   re-render even if the video is up to date
  *      DRY_RUN=1                 list what would be rendered and stop
+ *      CHECK=1                   align lyrics to the audio and report how well they match; renders nothing
  *      LYRIC_FONT                font family for the lyrics (default "DejaVu Sans")
  */
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -33,15 +34,50 @@ const BUCKET = 'video-files';
 const FOLDER = 'lyric-videos';
 // Tracks that already have an official lyric video on the site (YouTube), so none is generated.
 const SKIP_TRACK_IDS = new Set(['e353330b-32c4-4dd5-bf5e-c0a7d64511a7']); // How It Starts
-const MIN_LYRICS_CHARS = 80; // shorter than this is placeholder text (credits only)
+const MIN_LYRIC_LINES = 4; // fewer sung lines than this means placeholder text (credits only)
+const LOW_CONF = 0.25; // aligned lines below this match the audio poorly and are listed for review
 
 /* ---------- lyrics + subtitles ---------- */
 
-export function cleanLyricLines(text) {
-  return String(text || '')
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter((l) => l && !/^\[[^\]]*\]$/.test(l)); // drop [Verse 1] style headers
+const CREDIT_RE = /\(\s*feat\.?[^)]*\)\.?\s*$/i; // "Title (feat. X & Y)." credit line, not sung
+const DIRECTION_RE = /^\(\s*(?:final |last |repeat )?(?:chorus|verse|bridge|hook|intro|outro|instrumental|interlude|refrain)[^)]*\)$/i;
+const TRANSLATION_HEAD_RE = /^\[[^\]]*translation[^\]]*\]$/i;
+
+/**
+ * Turns the lyrics text into the lines that are actually sung: [{ line, sub? }].
+ * Drops [Section] headers, credit lines and stage directions. A "[... Translation ...]" block
+ * is not sung, so it is removed from the sung lines and, when it has the same number of lines
+ * as the block it translates, shown as a small subtitle under each sung line (`sub`).
+ */
+export function parseLyrics(text) {
+  const blocks = [];
+  let cur = [];
+  const flush = () => { if (cur.length) blocks.push(cur); cur = []; };
+  for (const raw of String(text || '').split(/\r?\n/)) {
+    const l = raw.trim();
+    if (!l) { flush(); continue; }
+    cur.push(l);
+  }
+  flush();
+
+  const out = [];
+  let lastSung = null;
+  for (const block of blocks) {
+    const sung = [];
+    const trans = [];
+    let inTrans = false;
+    for (const l of block) {
+      if (TRANSLATION_HEAD_RE.test(l)) { inTrans = true; continue; }
+      if (/^\[[^\]]*\]$/.test(l) || CREDIT_RE.test(l) || DIRECTION_RE.test(l)) continue;
+      (inTrans ? trans : sung).push(l);
+    }
+    const entries = sung.map((line) => ({ line }));
+    const target = entries.length ? entries : lastSung; // a translation-only paragraph belongs to the block before it
+    if (trans.length && target && target.length === trans.length) target.forEach((e, i) => { e.sub = trans[i]; });
+    out.push(...entries);
+    if (entries.length) lastSung = entries;
+  }
+  return out;
 }
 
 function assTime(sec) {
@@ -70,6 +106,7 @@ ScaledBorderAndShadow: yes
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Cur,${FONT},58,&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,3,2,5,110,110,0,1
 Style: Side,${FONT},34,&H78FFFFFF,&H78FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,2,1,5,110,110,0,1
+Style: Sub,${FONT},30,&H00D2D2D2,&H00D2D2D2,&H00000000,&H64000000,0,-1,0,0,100,100,0,0,1,2,1,5,110,110,0,1
 Style: Meta,${FONT},30,&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,2,1,7,56,56,0,1
 
 [Events]
@@ -87,7 +124,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     end = Math.min(end, start + 10, duration); // do not let one line linger through long gaps
     if (end <= start) return;
     const at = `${assTime(start)},${assTime(end)}`;
-    ev.push(`Dialogue: 1,${at},Cur,,0,0,0,,{\\an5\\pos(${W / 2},${H / 2})\\fad(180,180)}${esc(l.line)}`);
+    const curY = l.sub ? 325 : H / 2;
+    ev.push(`Dialogue: 1,${at},Cur,,0,0,0,,{\\an5\\pos(${W / 2},${curY})\\fad(180,180)}${esc(l.line)}`);
+    if (l.sub) ev.push(`Dialogue: 1,${at},Sub,,0,0,0,,{\\an5\\pos(${W / 2},400)\\fad(180,180)}${esc(l.sub)}`);
     if (i > 0) ev.push(`Dialogue: 0,${at},Side,,0,0,0,,{\\an5\\pos(${W / 2},235)}${esc(lines[i - 1].line)}`);
     if (next) ev.push(`Dialogue: 0,${at},Side,,0,0,0,,{\\an5\\pos(${W / 2},485)}${esc(next.line)}`);
   });
@@ -140,7 +179,7 @@ function syncedLines(raw) {
   if (!Array.isArray(raw)) return null;
   const lines = raw
     .filter((x) => x && typeof x.line === 'string' && x.line.trim() && Number.isFinite(Number(x.time)))
-    .map((x) => ({ line: x.line.trim(), time: Number(x.time) }))
+    .map((x) => ({ line: x.line.trim(), time: Number(x.time), sub: x.sub, conf: x.conf }))
     .sort((a, b) => a.time - b.time);
   return lines.length >= 3 ? lines : null;
 }
@@ -157,17 +196,30 @@ function ensureAligner() {
   alignerReady = true;
 }
 
-function alignLyrics(audio, lines, dir) {
+function alignLyrics(audio, entries, dir) {
   ensureAligner();
   const txt = join(dir, 'lyrics.txt');
   const json = join(dir, 'aligned.json');
-  writeFileSync(txt, lines.join('\n'));
+  writeFileSync(txt, entries.map((e) => e.line).join('\n'));
   execFileSync('python3', [join(HERE, 'align.py'), audio, txt, json], { stdio: 'inherit' });
-  return JSON.parse(readFileSync(json, 'utf8'));
+  const aligned = JSON.parse(readFileSync(json, 'utf8'));
+  return aligned.map((a, i) => ({ ...a, sub: entries[i]?.sub }));
+}
+
+/** Prints how well the aligned lyrics match the audio. Returns the average match (0-1) or null. */
+function reportConfidence(title, timed) {
+  const scored = timed.filter((x) => typeof x.conf === 'number');
+  if (!scored.length) return null;
+  const avg = scored.reduce((sum, x) => sum + x.conf, 0) / scored.length;
+  const bad = scored.filter((x) => x.conf < LOW_CONF);
+  console.log(`LYRICS CHECK ${title}: average match ${(avg * 100).toFixed(0)}%, ${bad.length}/${scored.length} doubtful lines`);
+  bad.slice(0, 12).forEach((x) => console.log(`   ? ${x.time.toFixed(1)}s  ${x.line}  (${(x.conf * 100).toFixed(0)}%)`));
+  return avg;
 }
 
 /* ---------- supabase ---------- */
 
+const CHECK = process.env.CHECK === '1' || process.env.CHECK === 'true';
 const SB_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const sbHeaders = (extra = {}) => ({ apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, ...extra });
@@ -199,19 +251,22 @@ async function download(url, file) {
 async function buildOne(track, release, index, existing) {
   const dir = mkdtempSync(join(tmpdir(), 'lyricvid-'));
   try {
-    const lyricLines = cleanLyricLines(track.lyrics);
+    const entries = parseLyrics(track.lyrics);
     const audio = join(dir, 'audio' + (track.audio_url.match(/\.(mp3|wav|m4a|flac|ogg)(\?|$)/i)?.[0].replace(/\?$/, '') || '.mp3'));
     await download(track.audio_url, audio);
     const duration = probeDuration(audio);
 
     let timed = syncedLines(track.lyrics_synced);
     let timing = 'synced';
+    let match = null;
     if (!timed) {
       timing = 'aligned';
-      const aligned = alignLyrics(audio, lyricLines, dir);
+      const aligned = alignLyrics(audio, entries, dir);
+      match = reportConfidence(track.title, aligned);
       timed = syncedLines(aligned);
       if (!timed) throw new Error('alignment produced no usable timings');
     }
+    if (CHECK) return { timing: 'checked', seconds: Math.round(duration), match };
 
     let art = null;
     if (release?.artwork_url && /^https?:\/\//.test(release.artwork_url)) {
@@ -244,7 +299,7 @@ async function buildOne(track, release, index, existing) {
     };
     if (!existing) row.published_at = new Date().toISOString().slice(0, 10);
     await rest('videos?on_conflict=track_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(row) });
-    return { timing, seconds: Math.round(duration) };
+    return { timing, seconds: Math.round(duration), match };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -271,14 +326,15 @@ async function main() {
     if (only.size && !only.has(t.id)) continue;
     if (SKIP_TRACK_IDS.has(t.id) && !only.has(t.id)) { summary.skipped.push(`${name}: already has an official lyric video`); continue; }
     if (!t.audio_url) { summary.skipped.push(`${name}: no audio file`); continue; }
-    if (String(t.lyrics || '').trim().length < MIN_LYRICS_CHARS) { summary.skipped.push(`${name}: no lyrics yet`); continue; }
+    if (parseLyrics(t.lyrics).length < MIN_LYRIC_LINES) { summary.skipped.push(`${name}: no lyrics yet`); continue; }
+    if (CHECK && syncedLines(t.lyrics_synced)) { summary.skipped.push(`${name}: has timestamps (trusted, not checked)`); continue; }
     const ex = vidByTrack.get(t.id);
-    if (!force && ex && ex.source_updated_at && Date.parse(ex.source_updated_at) >= Date.parse(t.updated_at)) { summary.skipped.push(`${name}: up to date`); continue; }
+    if (!CHECK && !force && ex && ex.source_updated_at && Date.parse(ex.source_updated_at) >= Date.parse(t.updated_at)) { summary.skipped.push(`${name}: up to date`); continue; }
     if (dry) { summary.built.push(`${name}: would render (${syncedLines(t.lyrics_synced) ? 'synced' : 'needs alignment'})`); continue; }
     console.log(`\n=== ${name} ===`);
     try {
       const r = await buildOne(t, relById.get(t.release_id), i, ex);
-      summary.built.push(`${name}: ${r.seconds}s, ${r.timing} timing`);
+      summary.built.push(`${name}: ${r.seconds}s, ${r.timing} timing${r.match != null ? `, lyrics match ${(r.match * 100).toFixed(0)}%` : ''}`);
     } catch (e) {
       console.error(`FAILED ${name}: ${e.message}`);
       summary.failed.push(`${name}: ${e.message}`);

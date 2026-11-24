@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { Blocks, Clapperboard, Images, LayoutDashboard, Link as LinkIcon, Mail, Moon, Newspaper, SlidersHorizontal, Sun } from 'lucide-react';
+import { Blocks, Clapperboard, Images, LayoutDashboard, Link as LinkIcon, Mail, Moon, Music2, Newspaper, SlidersHorizontal, Sun } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import CamLogo from '@/components/layout/CamLogo';
 import Avatar from '@/components/ui/Avatar';
@@ -10,6 +10,7 @@ import Avatar from '@/components/ui/Avatar';
 const NAV = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/releases', label: 'Releases', icon: Blocks },
+  { href: '/admin/producers-cut', label: 'Producer Packs', icon: Music2 },
   { href: '/admin/news', label: 'News', icon: Newspaper },
   { href: '/admin/videos', label: 'Videos', icon: Clapperboard },
   { href: '/admin/gallery', label: 'Gallery', icon: Images },

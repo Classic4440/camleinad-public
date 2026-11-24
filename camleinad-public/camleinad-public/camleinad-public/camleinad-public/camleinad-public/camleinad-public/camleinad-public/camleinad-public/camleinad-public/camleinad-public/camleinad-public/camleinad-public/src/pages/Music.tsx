@@ -5,7 +5,7 @@ import { PageTransition } from '@/components/motion';
 import ReleaseCard from '@/components/features/ReleaseCard';
 import FetchError from '@/components/ui/FetchError';
 import type { Release, Track } from '@/types';
-import { cn, DEFAULT_LABEL_SHORT_FORM, DEFAULT_RECORD_LABEL_NAME } from '@/lib/utils';
+import { cn, DEFAULT_RECORD_LABEL_NAME } from '@/lib/utils';
 
 const FILTERS = [
   { label: 'All', value: 'all' },
@@ -22,7 +22,6 @@ export default function MusicPage() {
   const [loadError, setLoadError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [recordLabelName, setRecordLabelName] = useState(DEFAULT_RECORD_LABEL_NAME);
-  const [labelShortForm, setLabelShortForm] = useState(DEFAULT_LABEL_SHORT_FORM);
 
   useEffect(() => {
     let active = true;
@@ -32,7 +31,8 @@ export default function MusicPage() {
       const [{ data, error }, { data: settings }] = await Promise.all([supabase
         .from('releases')
         .select('*, streaming_links(*)')
-        .order('sort_order'), supabase.from('site_settings').select('key,value').in('key', ['record_label_name', 'label_short_form'])]);
+        .order('release_date', { ascending: false, nullsFirst: false })
+        .order('sort_order'), supabase.from('site_settings').select('key,value').eq('key', 'record_label_name')]);
       if (!active) return;
       let tracks: Track[] = [];
       let tracksError = false;
@@ -58,7 +58,6 @@ export default function MusicPage() {
         })));
         settings?.forEach(setting => {
           if (setting.key === 'record_label_name' && setting.value) setRecordLabelName(setting.value);
-          if (setting.key === 'label_short_form' && setting.value) setLabelShortForm(setting.value);
         });
       }
       setLoadError(!!error || tracksError);
@@ -74,7 +73,8 @@ export default function MusicPage() {
     if (filter === 'upcoming') return ['UPCOMING', 'IN_DEVELOPMENT', 'SCHEDULED'].includes(r.status);
     return r.type === filter;
   });
-  const featuredRelease = releases.find(release => release.featured && release.status === 'RELEASED') || releases.find(release => release.status === 'RELEASED');
+  const confessionRelease = releases.find(release => release.title.trim().toLowerCase() === 'the confession' && release.status === 'RELEASED');
+  const featuredRelease = confessionRelease || releases.find(release => release.status === 'RELEASED');
   const featuredVisible = filter === 'all' && featuredRelease;
   const releasedReleases = filtered.filter(release => release.status === 'RELEASED' && (!featuredVisible || release.id !== featuredRelease?.id));
   const upcomingReleases = filtered.filter(release => ['UPCOMING', 'IN_DEVELOPMENT', 'SCHEDULED'].includes(release.status));
@@ -88,7 +88,7 @@ export default function MusicPage() {
         item: {
           '@type': release.type === 'SINGLE' ? 'MusicRecording' : 'MusicAlbum',
           name: release.title,
-          byArtist: { '@type': 'MusicGroup', name: 'Cam Leinad', alternateName: 'CAM' },
+          byArtist: { '@type': 'MusicGroup', name: 'Cam Leinad' },
           ...(release.status === 'RELEASED' && release.release_date ? { datePublished: release.release_date } : {}),
           url: `${window.location.origin}/music/${release.slug}`,
         },
@@ -146,18 +146,18 @@ export default function MusicPage() {
             {featuredVisible && featuredRelease && <section aria-labelledby="featured-release-title">
               <p className="eyebrow">FEATURED</p>
               <h2 id="featured-release-title" className="sr-only">{featuredRelease.title}</h2>
-              <ReleaseCard release={featuredRelease} variant="featured" recordLabelName={recordLabelName} labelShortForm={labelShortForm} />
+              <ReleaseCard release={featuredRelease} variant="featured" recordLabelName={recordLabelName} />
             </section>}
             {releasedReleases.length > 0 && <section aria-labelledby="released-grid-title">
               <h2 id="released-grid-title" className="eyebrow">RELEASED</h2>
               <div className="release-list">
-                {releasedReleases.map(release => <ReleaseCard key={release.id} release={release} recordLabelName={recordLabelName} labelShortForm={labelShortForm} />)}
+                {releasedReleases.map(release => <ReleaseCard key={release.id} release={release} recordLabelName={recordLabelName} />)}
               </div>
             </section>}
             {upcomingReleases.length > 0 && <section aria-labelledby="upcoming-grid-title">
               <h2 id="upcoming-grid-title" className="eyebrow">COMING SOON</h2>
               <div className="release-list release-list--upcoming">
-                {upcomingReleases.map(release => <ReleaseCard key={release.id} release={release} recordLabelName={recordLabelName} labelShortForm={labelShortForm} />)}
+                {upcomingReleases.map(release => <ReleaseCard key={release.id} release={release} recordLabelName={recordLabelName} />)}
               </div>
             </section>}
           </div>

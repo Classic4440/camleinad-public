@@ -2,7 +2,7 @@ import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { DEFAULT_LABEL_SHORT_FORM, DEFAULT_RECORD_LABEL_NAME } from '@/lib/utils';
+import { DEFAULT_RECORD_LABEL_NAME } from '@/lib/utils';
 
 const SITE_URL = 'https://camleinad.pages.dev';
 
@@ -17,7 +17,7 @@ export default function SiteMetadata() {
   useEffect(() => {
     let active = true;
     supabase.from('site_settings').select('key,value')
-      .in('key', ['artist_name', 'record_label_name', 'label_short_form', 'seo_title', 'seo_description'])
+      .in('key', ['artist_name', 'record_label_name', 'seo_title', 'seo_description'])
       .then(({ data }) => {
         if (!active) return;
         const map: Record<string, string> = {};
@@ -33,17 +33,16 @@ export default function SiteMetadata() {
   const isProducersCut = pathname === '/producers-cut';
   const artistName = settings.artist_name || 'Cam Leinad';
   const recordLabelName = settings.record_label_name || DEFAULT_RECORD_LABEL_NAME;
-  const labelShortForm = settings.label_short_form || DEFAULT_LABEL_SHORT_FORM;
   const routeTitle = isRelease || isArticle ? titleFromSlug(segments[1]) : ({
-    '/': `${labelShortForm} — ${artistName}`,
+    '/': `${recordLabelName} — ${artistName}`,
     '/music': `Music — ${artistName}`,
     '/about': `About — ${artistName}`,
     '/videos': `Videos — ${artistName}`,
     '/gallery': `Gallery — ${artistName}`,
     '/news': `News — ${artistName}`,
     '/contact': `Contact — ${artistName}`,
-    '/auth': `Sign In — ${labelShortForm}`,
-  }[pathname] || (pathname.startsWith('/admin') ? `Admin — ${labelShortForm}` : `${artistName} — ${labelShortForm}`));
+    '/auth': `Sign In — ${recordLabelName}`,
+  }[pathname] || (pathname.startsWith('/admin') ? `Admin — ${recordLabelName}` : `${artistName} — ${recordLabelName}`));
   const producersCutTitle = "Producer's Cut | FL Studio Beats & MIDI Packs by CAM";
   const producersCutDescription = 'Download high-quality FL Studio beats, MIDI files, and sample packs produced by Cam Leinad. Free and premium packs available.';
   const pageTitle = isProducersCut
@@ -52,7 +51,7 @@ export default function SiteMetadata() {
   const routeDescription = ({
     '/': `${artistName} — independent pop artist on ${recordLabelName} Records. Debut single 'How It Starts' out now.`,
     '/music': `Explore releases, tracks, and streaming links from ${artistName}.`,
-    '/about': `Meet ${artistName}, the artist behind ${labelShortForm} and ${recordLabelName}.`,
+    '/about': `Meet ${artistName}, the artist behind ${recordLabelName}.`,
     '/videos': `Watch official videos and visual content from ${artistName}.`,
     '/gallery': `Browse artist, studio, process, artwork, and press images from ${artistName}.`,
     '/news': `Read the latest music and artist updates from ${artistName}.`,
@@ -66,10 +65,9 @@ export default function SiteMetadata() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: recordLabelName,
-    alternateName: labelShortForm,
     recordLabel: recordLabelName,
     founder: { '@type': 'Person', name: artistName },
-    brand: { '@type': 'Brand', name: labelShortForm },
+    brand: { '@type': 'Brand', name: recordLabelName },
     url: SITE_URL,
   };
 
