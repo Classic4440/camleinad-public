@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { cn, DEFAULT_LABEL_SHORT_FORM, DEFAULT_RECORD_LABEL_NAME, getAudioUrl, getStatusLabel, getStatusClass, getTypeLabel, formatDate } from '@/lib/utils';
+import { cn, DEFAULT_RECORD_LABEL_NAME, getAudioUrl, getStatusLabel, getStatusClass, getTypeLabel, formatDate } from '@/lib/utils';
 import { thumbUrl } from '@/lib/imageUrl';
 import type { Release, Track } from '@/types';
 import { useState, useEffect } from 'react';
@@ -13,10 +13,9 @@ interface ReleaseCardProps {
   release: Release;
   variant?: 'grid' | 'featured' | 'compact';
   recordLabelName?: string;
-  labelShortForm?: string;
 }
 
-export default function ReleaseCard({ release, variant = 'grid', recordLabelName = DEFAULT_RECORD_LABEL_NAME, labelShortForm = DEFAULT_LABEL_SHORT_FORM }: ReleaseCardProps) {
+export default function ReleaseCard({ release, variant = 'grid', recordLabelName = DEFAULT_RECORD_LABEL_NAME }: ReleaseCardProps) {
   const { playTrack, dispatch } = usePlayer();
   const { user } = useAuth();
   const [isFav, setIsFav] = useState(false);
@@ -25,11 +24,11 @@ export default function ReleaseCard({ release, variant = 'grid', recordLabelName
   const hasPlayableAudio = release.status === 'RELEASED' && Boolean(release.tracks?.some(track => track.audio_url));
   const platformLinks = (release.streaming_links || []).flatMap(link => {
     const platform = link.platform.toLowerCase();
-    if (platform === 'spotify') return [{ ...link, icon: Headphones }];
     if (platform === 'apple_music') return [{ ...link, icon: Music2 }];
     if (platform === 'youtube_music') return [{ ...link, icon: Youtube }];
     return [];
   });
+  const spotifyLink = release.streaming_links?.find(link => link.platform.toLowerCase() === 'spotify');
 
   useEffect(() => {
     if (!user) return;
@@ -109,10 +108,11 @@ export default function ReleaseCard({ release, variant = 'grid', recordLabelName
       <div className="release-row__details">
         <p className="eyebrow">{getTypeLabel(release.type)}{release.release_date && ` / ${formatDate(release.release_date)}`}</p>
         <Link to={`/music/${release.slug}`} className="release-row__title">{release.title}</Link>
-        <p className="release-row__meta">{release.status === 'RELEASED' ? `Released on ${recordLabelName} (${labelShortForm})` : `Coming soon from ${recordLabelName} (${labelShortForm})`}</p>
+        <p className="release-row__meta">{release.status === 'RELEASED' ? `Released on ${recordLabelName}` : `Coming soon from ${recordLabelName}`}</p>
         {['IN_DEVELOPMENT', 'UPCOMING', 'SCHEDULED'].includes(release.status) && release.tracks?.some(track => track.teaser_enabled === true && track.teaser_audio_url) && <p className="mt-1 text-xs text-[var(--accent)]">Preview available</p>}
         {release.description && <p className="release-row__description">{release.description}</p>}
         <div className="release-row__actions">
+          {release.status === 'RELEASED' && spotifyLink && <a href={spotifyLink.url} target="_blank" rel="noopener noreferrer" className="text-link"><Headphones aria-hidden="true" className="h-4 w-4" /> Stream on Spotify</a>}
           {release.status === 'RELEASED' && hasPlayableAudio && <button type="button" onClick={handlePlay} className="text-link">Listen</button>}
           {release.status === 'RELEASED' && <button type="button" onClick={addReleaseToQueue} className="text-link"><ListPlus aria-hidden="true" className="w-4 h-4" /> Queue</button>}
           {user && <button type="button" onClick={toggleFavorite} disabled={favoriteSaving} className="text-link" aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}>{isFav ? 'Saved' : 'Save'}</button>}
