@@ -1,0 +1,76 @@
+name: One-time Nested Folder Cleanup
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cleanup-nested.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove nested camleinad-public directories and .env
+        run: |
+          echo "Current size before cleanup:"
+          du -sh .
+          
+          # Remove the nested directory (the main problem)
+          if [ -d "camleinad-public" ]; then
+            echo "Removing nested camleinad-public/ ..."
+            rm -rf camleinad-public
+            echo "Nested directory removed."
+          else
+            echo "No nested camleinad-public/ found."
+          fi
+          
+          # Remove committed .env if present
+          if [ -f ".env" ]; then
+            echo "Removing committed .env ..."
+            rm -f .env
+          fi
+          
+          # Ensure .gitignore ignores .env
+          if ! grep -q "^\.env$" .gitignore 2>/dev/null; then
+            echo "" >> .gitignore
+            echo "# Environment" >> .gitignore
+            echo ".env" >> .gitignore
+            echo ".env.*" >> .gitignore
+            echo "!.env.example" >> .gitignore
+            echo "Updated .gitignore"
+          fi
+          
+          echo "Size after cleanup:"
+          du -sh .
+          ls -la
+
+      - name: Commit and push cleanup
+        run: |
+          git config user.name "Classic4440"
+          git config user.email "91569239+Classic4440@users.noreply.github.com"
+          
+          git add -A
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit. Cleanup already done."
+          else
+            git commit -m "Fix: Remove deeply nested camleinad-public directories and committed .env
+
+- Deleted recursive camleinad-public/ nesting (was causing ~100MB+ bloat)
+- Removed committed .env file (security)
+- Updated .gitignore to ignore .env files
+- Real source remains cleanly at repository root
+
+Repo size reduced significantly"
+            git push origin main
+            echo "Cleanup committed and pushed successfully."
+          fi
