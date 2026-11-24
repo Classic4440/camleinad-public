@@ -27,6 +27,11 @@ on:
         description: "Check lyrics against the audio (no videos made): lists lines that do not match what is sung"
         type: boolean
         default: false
+  push:
+    # Changing the video script rebuilds every video (force), so all videos match the latest script.
+    paths:
+      - "scripts/lyric-videos/**"
+      - ".github/workflows/lyric-videos.yml"
   schedule:
     - cron: "17 3 * * 1" # weekly: picks up newly released tracks and edited lyrics
 
@@ -68,7 +73,7 @@ jobs:
           SUPABASE_URL: https://wptaddzloshnaecnrfyv.supabase.co
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           ONLY: ${{ inputs.only }}
-          FORCE: ${{ inputs.force }}
+          FORCE: ${{ inputs.force || github.event_name == 'push' }}
           DRY_RUN: ${{ inputs.dry_run }}
           CHECK: ${{ inputs.check_lyrics }}
         run: node scripts/lyric-videos/build.mjs

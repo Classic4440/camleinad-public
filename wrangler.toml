@@ -6,5 +6,3 @@ pages_build_output_dir = "dist"
 # Configure these in Cloudflare Pages / Workers secrets or environment variables:
 # SUPABASE_URL
 # SUPABASE_SERVICE_ROLE_KEY
-NOTELAB_SUPABASE_URL = ""
-NOTELAB_SUPABASE_SERVICE_ROLE_KEY = ""

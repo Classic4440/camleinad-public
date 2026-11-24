@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowDownToLine, ArrowUpRight, AudioLines, Pause, Play, Sparkles } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpRight, AudioLines, Pause, Play, Search, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { ProducerPack } from '@/types';
 
@@ -145,6 +145,10 @@ export default function ProducersCut() {
   const [packs, setPacks] = useState<ProducerPack[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState('');
+  const [selectedBpm, setSelectedBpm] = useState('any');
+  const [selectedKey, setSelectedKey] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -159,8 +163,21 @@ export default function ProducersCut() {
     return () => { active = false; };
   }, []);
 
-  const freePacks = packs.filter(pack => pack.is_free);
-  const premiumPacks = packs.filter(pack => !pack.is_free);
+  const genres = [...new Set(packs.map(pack => pack.genre?.trim()).filter((genre): genre is string => Boolean(genre)))].sort((a, b) => a.localeCompare(b));
+  const keys = [...new Set(packs.map(pack => pack.musical_key?.trim()).filter((musicalKey): musicalKey is string => Boolean(musicalKey)))].sort((a, b) => a.localeCompare(b));
+  const filteredPacks = packs.filter(pack => {
+    const matchesTitle = pack.title.toLowerCase().includes(searchQuery.trim().toLowerCase());
+    const matchesGenre = !selectedGenre || pack.genre?.trim() === selectedGenre;
+    const matchesKey = !selectedKey || pack.musical_key?.trim() === selectedKey;
+    const matchesBpm = selectedBpm === 'any'
+      || (pack.bpm !== null && selectedBpm === 'under-100' && pack.bpm < 100)
+      || (pack.bpm !== null && selectedBpm === '100-140' && pack.bpm >= 100 && pack.bpm <= 140)
+      || (pack.bpm !== null && selectedBpm === 'over-140' && pack.bpm > 140);
+    return matchesTitle && matchesGenre && matchesKey && matchesBpm;
+  });
+  const freePacks = filteredPacks.filter(pack => pack.is_free);
+  const premiumPacks = filteredPacks.filter(pack => !pack.is_free);
+  const hasActiveFilters = Boolean(searchQuery.trim() || selectedGenre || selectedKey || selectedBpm !== 'any');
 
   function renderPackSection(title: string, eyebrow: string, items: ProducerPack[]) {
     return (
@@ -178,7 +195,7 @@ export default function ProducersCut() {
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-white/10 px-6 py-12 text-center text-sm text-white/40">
-            {loading ? 'Loading packs…' : 'New sounds are in the works. Check back soon.'}
+            {loading ? 'Loading packs…' : hasActiveFilters ? `No ${title.toLowerCase()} match these filters.` : 'New sounds are in the works. Check back soon.'}
           </div>
         )}
       </section>
@@ -216,10 +233,60 @@ export default function ProducersCut() {
           </div>
         </section>
 
+        <section aria-label="Filter producer packs" className="mt-8 rounded-2xl border border-white/10 bg-[#181818] p-4 sm:p-5">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(14rem,1.5fr)_repeat(3,minmax(0,1fr))]">
+            <label className="relative block">
+              <span className="sr-only">Search by title</span>
+              <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={event => setSearchQuery(event.target.value)}
+                placeholder="Search by title"
+                className="h-11 w-full rounded-xl border border-white/10 bg-[#101010] pl-10 pr-3 text-sm text-white placeholder:text-white/35 focus:border-[#B6FF00]/60 focus:outline-none"
+              />
+            </label>
+            <label>
+              <span className="sr-only">Filter by genre</span>
+              <select value={selectedGenre} onChange={event => setSelectedGenre(event.target.value)} className="h-11 w-full rounded-xl border border-white/10 bg-[#101010] px-3 text-sm text-white focus:border-[#B6FF00]/60 focus:outline-none">
+                <option value="">Any Genre</option>
+                {genres.map(genre => <option key={genre} value={genre}>{genre}</option>)}
+              </select>
+            </label>
+            <label>
+              <span className="sr-only">Filter by BPM range</span>
+              <select value={selectedBpm} onChange={event => setSelectedBpm(event.target.value)} className="h-11 w-full rounded-xl border border-white/10 bg-[#101010] px-3 text-sm text-white focus:border-[#B6FF00]/60 focus:outline-none">
+                <option value="any">Any BPM</option>
+                <option value="under-100">Under 100</option>
+                <option value="100-140">100 - 140</option>
+                <option value="over-140">Over 140</option>
+              </select>
+            </label>
+            <label>
+              <span className="sr-only">Filter by key</span>
+              <select value={selectedKey} onChange={event => setSelectedKey(event.target.value)} className="h-11 w-full rounded-xl border border-white/10 bg-[#101010] px-3 text-sm text-white focus:border-[#B6FF00]/60 focus:outline-none">
+                <option value="">Any Key</option>
+                {keys.map(musicalKey => <option key={musicalKey} value={musicalKey}>{musicalKey}</option>)}
+              </select>
+            </label>
+          </div>
+        </section>
+
         {loadError && <p role="alert" className="mt-8 rounded-xl border border-red-400/20 bg-red-400/5 p-4 text-sm text-red-300">Couldn&apos;t load the packs. Please refresh to try again.</p>}
 
         <div id="free-downloads">{renderPackSection('Free Downloads', 'Take it and make something', freePacks)}</div>
         <div id="premium-packs">{renderPackSection('Premium Packs', 'For the ones who want more', premiumPacks)}</div>
+
+        <section className="mt-20 flex flex-col gap-6 rounded-2xl border border-[#B6FF00]/45 bg-[#181818] p-6 shadow-[0_0_34px_rgba(182,255,0,0.07)] sm:flex-row sm:items-center sm:justify-between sm:p-9">
+          <div>
+            <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[#B6FF00]">Made for your sound</p>
+            <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Need a custom beat for your next project?</h2>
+            <p className="mt-3 text-sm text-white/55">Cam All May produces exclusive instrumentals, mixing, and mastering.</p>
+          </div>
+          <Link to="/contact" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#B6FF00] px-5 text-sm font-bold text-[#121212] transition-colors hover:bg-[#caff42]">
+            Contact CAM <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+          </Link>
+        </section>
 
         <footer className="mt-24 flex flex-wrap items-center justify-between gap-4 border-t border-white/[0.07] pt-6 font-mono text-[10px] uppercase tracking-[0.15em] text-white/30">
           <span>THE PRODUCER&apos;S CUT · CAM</span>

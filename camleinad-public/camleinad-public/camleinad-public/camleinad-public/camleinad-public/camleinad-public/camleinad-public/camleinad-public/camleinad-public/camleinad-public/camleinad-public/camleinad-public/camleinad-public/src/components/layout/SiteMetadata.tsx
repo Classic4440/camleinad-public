@@ -30,6 +30,7 @@ export default function SiteMetadata() {
   const segments = pathname.split('/').filter(Boolean);
   const isRelease = segments[0] === 'music' && segments.length > 1;
   const isArticle = segments[0] === 'news' && segments.length > 1;
+  const isProducersCut = pathname === '/producers-cut';
   const artistName = settings.artist_name || 'Cam Leinad';
   const recordLabelName = settings.record_label_name || DEFAULT_RECORD_LABEL_NAME;
   const labelShortForm = settings.label_short_form || DEFAULT_LABEL_SHORT_FORM;
@@ -43,7 +44,11 @@ export default function SiteMetadata() {
     '/contact': `Contact — ${artistName}`,
     '/auth': `Sign In — ${labelShortForm}`,
   }[pathname] || (pathname.startsWith('/admin') ? `Admin — ${labelShortForm}` : `${artistName} — ${labelShortForm}`));
-  const pageTitle = settings.seo_title || (isRelease || isArticle ? `${routeTitle} — ${artistName}` : routeTitle);
+  const producersCutTitle = "Producer's Cut | FL Studio Beats & MIDI Packs by CAM";
+  const producersCutDescription = 'Download high-quality FL Studio beats, MIDI files, and sample packs produced by Cam Leinad. Free and premium packs available.';
+  const pageTitle = isProducersCut
+    ? producersCutTitle
+    : settings.seo_title || (isRelease || isArticle ? `${routeTitle} — ${artistName}` : routeTitle);
   const routeDescription = ({
     '/': `${artistName} — independent pop artist on ${recordLabelName} Records. Debut single 'How It Starts' out now.`,
     '/music': `Explore releases, tracks, and streaming links from ${artistName}.`,
@@ -52,8 +57,9 @@ export default function SiteMetadata() {
     '/gallery': `Browse artist, studio, process, artwork, and press images from ${artistName}.`,
     '/news': `Read the latest music and artist updates from ${artistName}.`,
     '/contact': `Contact ${artistName} for bookings, press, and collaborations.`,
+    '/producers-cut': producersCutDescription,
   }[pathname] || `${routeTitle} by ${artistName}. Released independently on ${recordLabelName}.`);
-  const description = pathname === '/' ? routeDescription : settings.seo_description || routeDescription;
+  const description = isProducersCut ? producersCutDescription : pathname === '/' ? routeDescription : settings.seo_description || routeDescription;
   const canonical = `${SITE_URL}${pathname}`;
   const ogTitle = pageTitle.includes(artistName) ? pageTitle : `${pageTitle} — ${artistName}`;
   const organizationSchema = {
