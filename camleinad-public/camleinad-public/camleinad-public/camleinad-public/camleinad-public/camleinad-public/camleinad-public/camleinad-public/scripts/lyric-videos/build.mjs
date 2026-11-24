@@ -158,8 +158,8 @@ export function renderVideo({ audio, art, ass, out, duration }) {
     ...bgInput, '-i', audio,
     '-filter_complex', filter,
     '-map', '[v]', '-map', '1:a',
-    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '27', '-r', String(FPS), '-pix_fmt', 'yuv420p',
-    '-c:a', 'aac', '-b:a', '128k',
+    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '30', '-maxrate', '400k', '-bufsize', '800k', '-r', String(FPS), '-pix_fmt', 'yuv420p',
+    '-c:a', 'aac', '-b:a', '96k',
     '-t', duration.toFixed(2),
     '-movflags', '+faststart',
     out,
@@ -185,15 +185,24 @@ function syncedLines(raw) {
 }
 
 let alignerReady = false;
+let alignerError = null;
 function ensureAligner() {
   if (alignerReady) return;
-  const ok = spawnSync('python3', ['-c', 'import stable_whisper'], { stdio: 'ignore' }).status === 0;
-  if (!ok) {
-    console.log('Installing the lyric aligner (stable-ts, CPU torch)...');
-    execFileSync('python3', ['-m', 'pip', 'install', '--quiet', 'torch', '--index-url', 'https://download.pytorch.org/whl/cpu'], { stdio: 'inherit' });
-    execFileSync('python3', ['-m', 'pip', 'install', '--quiet', 'stable-ts'], { stdio: 'inherit' });
+  if (alignerError) throw alignerError; // do not retry the install for every song
+  try {
+    const importable = () => spawnSync('python3', ['-c', 'import stable_whisper'], { stdio: 'ignore' }).status === 0;
+    if (!importable()) {
+      console.log('Installing the lyric aligner (CPU PyTorch + stable-ts)...');
+      // torch and torchaudio must come from the same CPU index, otherwise pip fetches a CUDA torchaudio that cannot load.
+      execFileSync('python3', ['-m', 'pip', 'install', '--quiet', 'torch', 'torchaudio', '--index-url', 'https://download.pytorch.org/whl/cpu'], { stdio: 'inherit' });
+      execFileSync('python3', ['-m', 'pip', 'install', '--quiet', 'stable-ts'], { stdio: 'inherit' });
+      execFileSync('python3', ['-c', 'import stable_whisper'], { stdio: 'inherit' });
+    }
+    alignerReady = true;
+  } catch (e) {
+    alignerError = new Error(`the lyric aligner could not be installed: ${e.message}`);
+    throw alignerError;
   }
-  alignerReady = true;
 }
 
 function alignLyrics(audio, entries, dir) {

@@ -15,6 +15,7 @@ type PackForm = {
   genre: string;
   is_free: boolean;
   price: string;
+  payment_url: string;
   cover_url: string;
   audio_preview_url: string;
   download_url: string;
@@ -30,6 +31,7 @@ const EMPTY_FORM: PackForm = {
   genre: '',
   is_free: true,
   price: '',
+  payment_url: '',
   cover_url: '',
   audio_preview_url: '',
   download_url: '',
@@ -101,6 +103,7 @@ export default function ProducersCutAdmin() {
       genre: pack.genre || '',
       is_free: pack.is_free,
       price: String(pack.price),
+      payment_url: pack.payment_url || '',
       cover_url: pack.cover_url || '',
       audio_preview_url: pack.audio_preview_url || '',
       download_url: pack.download_url || '',
@@ -191,6 +194,7 @@ export default function ProducersCutAdmin() {
       cover_url: form.cover_url || null,
       audio_preview_url: form.audio_preview_url || null,
       download_url: form.download_url || null,
+      payment_url: form.payment_url.trim() || null,
       is_free: form.is_free,
       price,
       updated_at: new Date().toISOString(),
@@ -268,6 +272,16 @@ export default function ProducersCutAdmin() {
                 </label>
               )}
             </div>
+            <label className="block text-xs uppercase tracking-wider text-[#72727E]">Payment Link (Stripe/Gumroad)
+              <input
+                type="url"
+                value={form.payment_url}
+                onChange={event => setForm(current => ({ ...current, payment_url: event.target.value }))}
+                placeholder="https://buy.stripe.com/…"
+                className={`${FORM_INPUT} mt-1.5 normal-case tracking-normal`}
+              />
+              <span className="mt-1 block normal-case tracking-normal text-[#72727E]">Only required if the pack is NOT free.</span>
+            </label>
             <div className="grid gap-4 sm:grid-cols-3">
               {([
                 { field: 'cover_url', label: 'Cover Image', accept: 'image/*' },

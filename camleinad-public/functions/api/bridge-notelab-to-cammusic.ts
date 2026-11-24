@@ -54,15 +54,6 @@ function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: CORS_HEADERS });
 }
 
-function slugifyTitle(title: string, id: string): string {
-  const base = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 48);
-  return `${base || 'notelab-beat'}-${id.slice(0, 8)}`;
-}
-
 export const onRequestOptions: PagesFunction<Env> = async () => {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 };
@@ -114,29 +105,52 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
     const record = beat as NoteLabBeatRecord;
     const title = (record.beat_name && record.beat_name.trim()) || `NoteLab Beat ${record.id.slice(0, 8)}`;
-    const slug = slugifyTitle(title, record.id);
-    const releaseId = body?.releaseId ?? body?.release_id ?? null;
+
+    let releaseId = body?.releaseId ?? body?.release_id ?? null;
+    if (!releaseId) {
+      const { data: fallbackRelease } = await camMusicClient
+        .from('releases')
+        .select('id')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      releaseId = fallbackRelease?.id ?? null;
+    }
+
     const trackNumber = Number.isFinite(Number(body?.trackNumber ?? body?.track_number))
       ? Math.max(1, Math.round(Number(body?.trackNumber ?? body?.track_number)))
       : 1;
 
-    const midiPayload = record.notes_data ?? null;
+    const notesPayload = record.notes_data ?? null;
     const stemsPayload =
-      midiPayload && typeof midiPayload === 'object' && !Array.isArray(midiPayload)
-        ? ((midiPayload as Record<string, unknown>).stems ?? midiPayload)
-        : midiPayload;
+      notesPayload && typeof notesPayload === 'object' && !Array.isArray(notesPayload)
+        ? ((notesPayload as Record<string, unknown>).stems ?? notesPayload)
+        : notesPayload;
+
+    const bpmValue =
+      typeof record.bpm === 'number' && Number.isFinite(record.bpm)
+        ? Math.round(record.bpm)
+        : null;
+
+    const creditsEntry = {
+      source: 'notelab',
+      source_beat_id: record.id,
+      bpm: bpmValue,
+      notes_data: notesPayload,
+    };
 
     const trackInsertPayload: Record<string, unknown> = {
       title,
-      slug,
-      release_id: releaseId,
       track_number: trackNumber,
-      bpm: record.bpm ?? null,
-      midi_data: midiPayload,
-      stems_data: stemsPayload,
-      source_beat_id: record.id,
-      source_platform: 'notelab',
+      status: 'DRAFT',
+      bpm: bpmValue,
+      stems: stemsPayload,
+      credits: [creditsEntry],
     };
+
+    if (releaseId) {
+      trackInsertPayload.release_id = releaseId;
+    }
 
     const { data: insertedTrack, error: insertError } = await camMusicClient
       .from('tracks')
@@ -157,7 +171,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         sourceBeat: {
           id: record.id,
           beat_name: title,
-          bpm: record.bpm ?? null,
+          bpm: bpmValue,
         },
       },
       201,

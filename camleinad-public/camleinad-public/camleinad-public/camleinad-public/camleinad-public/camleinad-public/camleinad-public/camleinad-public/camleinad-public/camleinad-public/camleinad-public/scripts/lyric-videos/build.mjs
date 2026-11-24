@@ -1,0 +1,294 @@
+#!/usr/bin/env node
+/**
+ * Lyric video builder for camleinad.pages.dev
+ *
+ * For every RELEASED track in Supabase it takes the existing audio file and the track's
+ * lyrics, renders an MP4 with ffmpeg (blurred cover art, waveform, synced lyric lines),
+ * uploads it to the public `video-files` bucket and upserts a row in `videos`
+ * (category "lyric"). The site's Videos page reads that table at runtime, so new videos
+ * appear without redeploying. No generative video models are used.
+ *
+ * Timing: uses tracks.lyrics_synced when present, otherwise aligns the lyrics text to the
+ * audio with scripts/lyric-videos/align.py (forced alignment, not video generation).
+ *
+ * Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ *      ONLY=<track id,track id>  render just these tracks
+ *      FORCE=1                   re-render even if the video is up to date
+ *      DRY_RUN=1                 list what would be rendered and stop
+ *      LYRIC_FONT                font family for the lyrics (default "DejaVu Sans")
+ */
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, dirname } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const W = 1280;
+const H = 720;
+const FPS = 25;
+const FONT = process.env.LYRIC_FONT || 'DejaVu Sans';
+const ARTIST = 'Cam Leinad';
+const BUCKET = 'video-files';
+const FOLDER = 'lyric-videos';
+// Tracks that already have an official lyric video on the site (YouTube), so none is generated.
+const SKIP_TRACK_IDS = new Set(['e353330b-32c4-4dd5-bf5e-c0a7d64511a7']); // How It Starts
+const MIN_LYRICS_CHARS = 80; // shorter than this is placeholder text (credits only)
+
+/* ---------- lyrics + subtitles ---------- */
+
+export function cleanLyricLines(text) {
+  return String(text || '')
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && !/^\[[^\]]*\]$/.test(l)); // drop [Verse 1] style headers
+}
+
+function assTime(sec) {
+  const s = Math.max(0, sec);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const rest = s - h * 3600 - m * 60;
+  const whole = Math.floor(rest);
+  let cs = Math.round((rest - whole) * 100);
+  let ss = whole;
+  if (cs === 100) { cs = 0; ss += 1; }
+  return `${h}:${String(m).padStart(2, '0')}:${String(ss).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+}
+
+const esc = (s) => String(s).replace(/\\/g, '').replace(/[{}]/g, '').replace(/\r?\n/g, '\\N');
+
+export function buildAss({ title, release, lines, duration }) {
+  const head = `[Script Info]
+ScriptType: v4.00+
+PlayResX: ${W}
+PlayResY: ${H}
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Cur,${FONT},58,&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,3,2,5,110,110,0,1
+Style: Side,${FONT},34,&H78FFFFFF,&H78FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,2,1,5,110,110,0,1
+Style: Meta,${FONT},30,&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,2,1,7,56,56,0,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`;
+  const ev = [];
+  const meta = `{\\an7\\pos(56,40)}{\\fs32}${esc(title)}\\N{\\fs22\\b0\\alpha&H60&}${esc(`${ARTIST}${release ? ' · ' + release : ''}`)}`;
+  ev.push(`Dialogue: 0,${assTime(0)},${assTime(duration)},Meta,,0,0,0,,${meta}`);
+
+  lines.forEach((l, i) => {
+    const start = l.time;
+    if (start >= duration) return;
+    const next = lines[i + 1];
+    let end = next ? next.time : start + 8;
+    end = Math.min(end, start + 10, duration); // do not let one line linger through long gaps
+    if (end <= start) return;
+    const at = `${assTime(start)},${assTime(end)}`;
+    ev.push(`Dialogue: 1,${at},Cur,,0,0,0,,{\\an5\\pos(${W / 2},${H / 2})\\fad(180,180)}${esc(l.line)}`);
+    if (i > 0) ev.push(`Dialogue: 0,${at},Side,,0,0,0,,{\\an5\\pos(${W / 2},235)}${esc(lines[i - 1].line)}`);
+    if (next) ev.push(`Dialogue: 0,${at},Side,,0,0,0,,{\\an5\\pos(${W / 2},485)}${esc(next.line)}`);
+  });
+  return head + ev.join('\n') + '\n';
+}
+
+/* ---------- ffmpeg ---------- */
+
+export function probeDuration(file) {
+  const out = execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString().trim();
+  const d = parseFloat(out);
+  if (!Number.isFinite(d) || d <= 0) throw new Error('could not read audio duration');
+  return d;
+}
+
+export function renderVideo({ audio, art, ass, out, duration }) {
+  const bgInput = art
+    ? ['-loop', '1', '-framerate', String(FPS), '-i', art]
+    : ['-f', 'lavfi', '-i', `color=c=0x0d0d14:s=${W}x${H}:r=${FPS}`];
+  const assArg = ass.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "\\'");
+  const filter = [
+    `[0:v]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},gblur=sigma=40,eq=brightness=-0.4:saturation=1.1[bg]`,
+    `[1:a]showwaves=s=${W}x140:mode=cline:rate=${FPS}:colors=white@0.55:scale=sqrt[wv]`,
+    `[bg][wv]overlay=0:H-h-30:format=auto[v1]`,
+    `[v1]subtitles='${assArg}'[v]`,
+  ].join(';');
+  const args = [
+    '-y', '-hide_banner', '-loglevel', 'error',
+    ...bgInput, '-i', audio,
+    '-filter_complex', filter,
+    '-map', '[v]', '-map', '1:a',
+    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '27', '-r', String(FPS), '-pix_fmt', 'yuv420p',
+    '-c:a', 'aac', '-b:a', '128k',
+    '-t', duration.toFixed(2),
+    '-movflags', '+faststart',
+    out,
+  ];
+  const r = spawnSync('ffmpeg', args, { stdio: ['ignore', 'inherit', 'inherit'] });
+  if (r.status !== 0) throw new Error('ffmpeg failed');
+}
+
+export function extractPoster(video, out, at) {
+  const r = spawnSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-ss', at.toFixed(2), '-i', video, '-frames:v', '1', '-q:v', '3', out], { stdio: 'inherit' });
+  if (r.status !== 0) throw new Error('poster extraction failed');
+}
+
+/* ---------- timing ---------- */
+
+function syncedLines(raw) {
+  if (!Array.isArray(raw)) return null;
+  const lines = raw
+    .filter((x) => x && typeof x.line === 'string' && x.line.trim() && Number.isFinite(Number(x.time)))
+    .map((x) => ({ line: x.line.trim(), time: Number(x.time) }))
+    .sort((a, b) => a.time - b.time);
+  return lines.length >= 3 ? lines : null;
+}
+
+let alignerReady = false;
+function ensureAligner() {
+  if (alignerReady) return;
+  const ok = spawnSync('python3', ['-c', 'import stable_whisper'], { stdio: 'ignore' }).status === 0;
+  if (!ok) {
+    console.log('Installing the lyric aligner (stable-ts, CPU torch)...');
+    execFileSync('python3', ['-m', 'pip', 'install', '--quiet', 'torch', '--index-url', 'https://download.pytorch.org/whl/cpu'], { stdio: 'inherit' });
+    execFileSync('python3', ['-m', 'pip', 'install', '--quiet', 'stable-ts'], { stdio: 'inherit' });
+  }
+  alignerReady = true;
+}
+
+function alignLyrics(audio, lines, dir) {
+  ensureAligner();
+  const txt = join(dir, 'lyrics.txt');
+  const json = join(dir, 'aligned.json');
+  writeFileSync(txt, lines.join('\n'));
+  execFileSync('python3', [join(HERE, 'align.py'), audio, txt, json], { stdio: 'inherit' });
+  return JSON.parse(readFileSync(json, 'utf8'));
+}
+
+/* ---------- supabase ---------- */
+
+const SB_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const sbHeaders = (extra = {}) => ({ apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, ...extra });
+
+async function rest(path, init = {}) {
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, { ...init, headers: sbHeaders({ 'Content-Type': 'application/json', ...(init.headers || {}) }) });
+  if (!r.ok) throw new Error(`REST ${path.split('?')[0]} ${r.status}: ${await r.text()}`);
+  return r.status === 204 ? null : r.json().catch(() => null);
+}
+
+async function upload(path, buf, type) {
+  const r = await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${path}`, {
+    method: 'POST',
+    headers: sbHeaders({ 'Content-Type': type, 'x-upsert': 'true', 'cache-control': 'max-age=3600' }),
+    body: buf,
+  });
+  if (!r.ok) throw new Error(`upload ${path} ${r.status}: ${await r.text()}`);
+  return `${SB_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+}
+
+async function download(url, file) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`download ${r.status}: ${url}`);
+  writeFileSync(file, Buffer.from(await r.arrayBuffer()));
+}
+
+/* ---------- main ---------- */
+
+async function buildOne(track, release, index, existing) {
+  const dir = mkdtempSync(join(tmpdir(), 'lyricvid-'));
+  try {
+    const lyricLines = cleanLyricLines(track.lyrics);
+    const audio = join(dir, 'audio' + (track.audio_url.match(/\.(mp3|wav|m4a|flac|ogg)(\?|$)/i)?.[0].replace(/\?$/, '') || '.mp3'));
+    await download(track.audio_url, audio);
+    const duration = probeDuration(audio);
+
+    let timed = syncedLines(track.lyrics_synced);
+    let timing = 'synced';
+    if (!timed) {
+      timing = 'aligned';
+      const aligned = alignLyrics(audio, lyricLines, dir);
+      timed = syncedLines(aligned);
+      if (!timed) throw new Error('alignment produced no usable timings');
+    }
+
+    let art = null;
+    if (release?.artwork_url && /^https?:\/\//.test(release.artwork_url)) {
+      try { art = join(dir, 'art.jpg'); await download(release.artwork_url, art); } catch { art = null; }
+    }
+
+    const ass = join(dir, 'lyrics.ass');
+    writeFileSync(ass, buildAss({ title: track.title, release: release?.title, lines: timed, duration }));
+    const out = join(dir, 'out.mp4');
+    renderVideo({ audio, art, ass, out, duration });
+    const poster = join(dir, 'poster.jpg');
+    extractPoster(out, poster, Math.min(duration * 0.2, 25));
+
+    const stamp = Date.parse(track.updated_at) || Date.now();
+    const videoUrl = (await upload(`${FOLDER}/${track.id}.mp4`, readFileSync(out), 'video/mp4')) + `?v=${stamp}`;
+    const posterUrl = (await upload(`${FOLDER}/${track.id}.jpg`, readFileSync(poster), 'image/jpeg')) + `?v=${stamp}`;
+
+    const row = {
+      track_id: track.id,
+      title: `${track.title} (Lyric Video)`,
+      description: `Lyric video for "${track.title}"${release?.title ? ` from ${release.title}` : ''}.`,
+      category: 'lyric',
+      url: videoUrl,
+      thumbnail_url: posterUrl,
+      related_release_id: track.release_id,
+      source_updated_at: track.updated_at,
+      is_published: true,
+      sort_order: 100 + index,
+      updated_at: new Date().toISOString(),
+    };
+    if (!existing) row.published_at = new Date().toISOString().slice(0, 10);
+    await rest('videos?on_conflict=track_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(row) });
+    return { timing, seconds: Math.round(duration) };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+async function main() {
+  if (!SB_URL || !SB_KEY) throw new Error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.');
+  const only = new Set((process.env.ONLY || '').split(',').map((s) => s.trim()).filter(Boolean));
+  const force = process.env.FORCE === '1' || process.env.FORCE === 'true';
+  const dry = process.env.DRY_RUN === '1' || process.env.DRY_RUN === 'true';
+
+  const [tracks, releases, videos] = await Promise.all([
+    rest('tracks?select=id,title,track_number,audio_url,lyrics,lyrics_synced,status,updated_at,release_id&status=eq.RELEASED&order=track_number'),
+    rest('releases?select=id,title,artwork_url,sort_order&order=sort_order'),
+    rest('videos?select=id,track_id,source_updated_at&track_id=not.is.null'),
+  ]);
+  const relById = new Map(releases.map((r) => [r.id, r]));
+  const vidByTrack = new Map(videos.map((v) => [v.track_id, v]));
+  const ordered = [...tracks].sort((a, b) => ((relById.get(a.release_id)?.sort_order ?? 999) - (relById.get(b.release_id)?.sort_order ?? 999)) || (a.track_number - b.track_number));
+
+  const summary = { built: [], skipped: [], failed: [] };
+  for (const [i, t] of ordered.entries()) {
+    const name = t.title;
+    if (only.size && !only.has(t.id)) continue;
+    if (SKIP_TRACK_IDS.has(t.id) && !only.has(t.id)) { summary.skipped.push(`${name}: already has an official lyric video`); continue; }
+    if (!t.audio_url) { summary.skipped.push(`${name}: no audio file`); continue; }
+    if (String(t.lyrics || '').trim().length < MIN_LYRICS_CHARS) { summary.skipped.push(`${name}: no lyrics yet`); continue; }
+    const ex = vidByTrack.get(t.id);
+    if (!force && ex && ex.source_updated_at && Date.parse(ex.source_updated_at) >= Date.parse(t.updated_at)) { summary.skipped.push(`${name}: up to date`); continue; }
+    if (dry) { summary.built.push(`${name}: would render (${syncedLines(t.lyrics_synced) ? 'synced' : 'needs alignment'})`); continue; }
+    console.log(`\n=== ${name} ===`);
+    try {
+      const r = await buildOne(t, relById.get(t.release_id), i, ex);
+      summary.built.push(`${name}: ${r.seconds}s, ${r.timing} timing`);
+    } catch (e) {
+      console.error(`FAILED ${name}: ${e.message}`);
+      summary.failed.push(`${name}: ${e.message}`);
+    }
+  }
+  console.log('\n--- summary ---');
+  for (const k of ['built', 'skipped', 'failed']) { console.log(`${k} (${summary[k].length})`); summary[k].forEach((s) => console.log('  ' + s)); }
+  if (summary.failed.length) process.exitCode = 1;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((e) => { console.error(e); process.exit(1); });
+}
