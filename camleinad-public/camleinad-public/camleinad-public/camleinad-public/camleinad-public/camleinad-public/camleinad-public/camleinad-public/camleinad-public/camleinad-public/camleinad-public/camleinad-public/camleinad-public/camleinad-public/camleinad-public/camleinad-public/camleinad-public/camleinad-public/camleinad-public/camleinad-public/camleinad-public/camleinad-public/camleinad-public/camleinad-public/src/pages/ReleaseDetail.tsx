@@ -39,7 +39,7 @@ export default function ReleaseDetailPage() {
   const [retryCount, setRetryCount] = useState(0);
   const [notFound, setNotFound] = useState(false);
   const { state: playerState, playTrack, dispatch } = usePlayer();
-  const { user, isAdmin } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
 
   useEffect(() => {
     if (!slug) return;
@@ -348,7 +348,7 @@ export default function ReleaseDetailPage() {
                             <div className="space-y-4 mb-5">
                               {topLevelComments.map(comment => {
                                 const replies = trackThread.filter(reply => reply.parent_comment_id === comment.id);
-                                const displayName = comment.profile?.display_name || comment.profile?.username || 'Fan';
+                                const displayName = comment.profile?.display_name || comment.profile?.username || 'Anonymous';
                                 return <div key={comment.id} className="space-y-3">
                                   <article className="flex gap-3">
                                     <Avatar src={comment.profile?.avatar_url} name={displayName} size={32} />
@@ -359,7 +359,7 @@ export default function ReleaseDetailPage() {
                                     </div>
                                   </article>
                                   {replies.map(reply => {
-                                    const replyName = reply.profile?.display_name || reply.profile?.username || 'Fan';
+                                    const replyName = reply.profile?.display_name || reply.profile?.username || 'Anonymous';
                                     return <article key={reply.id} className="ml-8 flex gap-3 border-l border-white/10 pl-3">
                                       <Avatar src={reply.profile?.avatar_url} name={replyName} size={28} />
                                       <div className="min-w-0 flex-1"><div className="flex flex-wrap items-baseline gap-x-2 gap-y-1"><span className="text-sm font-medium text-white">{replyName}</span><time className="text-xs text-[#72727E]" dateTime={reply.created_at}>{new Date(reply.created_at).toLocaleString()}</time></div><p className="text-sm text-[#A8A8B3] mt-1 whitespace-pre-wrap">{reply.body}</p>{isAdmin && <button type="button" onClick={() => void deleteTrackComment(track.id, reply.id)} className="text-xs text-red-300 hover:text-red-200 mt-2">Delete</button>}</div>
@@ -451,11 +451,11 @@ export default function ReleaseDetailPage() {
               {comments.map(comment => (
                 <div key={comment.id} className="glass rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-full bg-violet-500/20 flex items-center justify-center text-xs text-violet-400">{comment.profile?.username?.[0]?.toUpperCase() || '?'}</div>
-                    <span className="text-sm font-medium text-white">{comment.profile?.display_name || comment.profile?.username || 'Fan'}</span>
-                    <span className="text-xs text-[#72727E]">{new Date(comment.created_at).toLocaleDateString()}</span>
+                    <Avatar src={comment.profile?.avatar_url} name={comment.profile?.display_name || comment.profile?.username || 'Anonymous'} size={28} />
+                    <span className="text-sm font-medium text-white">{comment.profile?.display_name || comment.profile?.username || 'Anonymous'}</span>
+                    <time className="text-xs text-[#72727E]" dateTime={comment.created_at}>{new Date(comment.created_at).toLocaleDateString()}</time>
                   </div>
-                  <p className="text-sm text-[#A8A8B3]">{comment.body}</p>
+                  <p className="whitespace-pre-wrap text-sm text-[#A8A8B3]">{comment.body}</p>
                 </div>
               ))}
             </div>

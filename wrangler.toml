@@ -1,7 +1,10 @@
 name = "camleinad"
-compatibility_date = "2026-04-01"
-compatibility_flags = ["nodejs_compat"]
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "dist"
 
 [vars]
-SUPABASE_URL = "https://wptaddzloshnaecnrfyv.supabase.co"
-# Set SUPABASE_SERVICE_ROLE_KEY via Wrangler secrets
+# Configure these in Cloudflare Pages / Workers secrets or environment variables:
+# SUPABASE_URL
+# SUPABASE_SERVICE_ROLE_KEY
+NOTELAB_SUPABASE_URL = ""
+NOTELAB_SUPABASE_SERVICE_ROLE_KEY = ""

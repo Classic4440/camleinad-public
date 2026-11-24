@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowUpRight, Play } from 'lucide-react';
+import { toast } from 'sonner';
 import NameReveal from '@/components/home/NameReveal';
 import ListenExperience from '@/components/home/ListenExperience';
 import { supabase } from '@/lib/supabase';
@@ -43,6 +44,8 @@ export default function HomePage() {
   const [loadError, setLoadError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [listening, setListening] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterSubmitting, setNewsletterSubmitting] = useState(false);
   const { playTrack } = usePlayer();
 
   useEffect(() => {
@@ -127,6 +130,30 @@ export default function HomePage() {
     setListening(true);
   }
 
+  async function submitNewsletter(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const email = newsletterEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('Enter a valid email address.');
+      return;
+    }
+
+    setNewsletterSubmitting(true);
+    const { error } = await supabase.from('newsletter_subscribers').insert({ email });
+    setNewsletterSubmitting(false);
+    if (error?.code === '23505') {
+      toast.info('You are already subscribed!');
+      return;
+    }
+    if (error) {
+      console.error('[Newsletter] Subscription failed:', error);
+      toast.error('Could not subscribe right now. Please try again.');
+      return;
+    }
+    setNewsletterEmail('');
+    toast.success('Successfully joined the journey! Check your inbox.');
+  }
+
   return (
     <div>
       <NameReveal />
@@ -201,6 +228,30 @@ export default function HomePage() {
           <Link to={`/music/${data.upcoming.slug}`} className="w-fit text-sm text-[var(--ink)] underline decoration-[var(--rule)] underline-offset-4 transition-colors hover:text-[var(--accent)] sm:justify-self-end">View release <span aria-hidden="true">→</span></Link>
         </section>
       )}
+
+      <section aria-labelledby="newsletter-title" className="home-section border-t border-[var(--rule)] py-16 sm:py-20">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--ink-muted)]">Stay in the loop</p>
+          <h2 id="newsletter-title" className="font-display text-3xl text-[var(--ink)]">Join the journey</h2>
+          <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-[var(--ink-muted)]">Get new music, studio notes, and updates from Cam Leinad in your inbox.</p>
+          <form onSubmit={submitNewsletter} className="mx-auto mt-6 flex max-w-lg flex-col gap-3 sm:flex-row">
+            <label htmlFor="newsletter-email" className="sr-only">Email address</label>
+            <input
+              id="newsletter-email"
+              type="email"
+              autoComplete="email"
+              required
+              value={newsletterEmail}
+              onChange={event => setNewsletterEmail(event.target.value)}
+              placeholder="Your email address"
+              className="min-h-12 min-w-0 flex-1 border border-[var(--rule)] bg-[var(--base)] px-4 text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            />
+            <button type="submit" disabled={newsletterSubmitting} className="min-h-12 bg-[var(--accent)] px-6 text-sm font-semibold text-[var(--base)] transition-opacity hover:opacity-85 disabled:cursor-wait disabled:opacity-50">
+              {newsletterSubmitting ? 'Joining…' : 'Join the journey'}
+            </button>
+          </form>
+        </div>
+      </section>
 
       <section aria-label="Social links" className="home-section flex flex-wrap justify-center gap-x-7 gap-y-3 border-t border-[var(--rule)] py-16 sm:py-20">
         {data.socials.map(link => (

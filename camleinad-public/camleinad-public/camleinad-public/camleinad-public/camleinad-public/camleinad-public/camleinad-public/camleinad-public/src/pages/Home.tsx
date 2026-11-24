@@ -216,6 +216,18 @@ export default function HomePage() {
         ) : <p className="py-8 text-sm text-[var(--ink-muted)]">No journal entries yet.</p>}
       </section>
 
+      <section aria-labelledby="producer-store-title" className="home-section border-t border-[var(--rule)] py-12 sm:py-14">
+        <div className="flex flex-col gap-5 rounded-2xl border border-[var(--rule)] bg-[var(--surface)] p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          <div>
+            <h2 id="producer-store-title" className="font-display text-2xl text-[var(--ink)]">Shop Beats &amp; MIDI Packs</h2>
+            <p className="mt-2 text-sm text-[var(--ink-muted)]">Looking for instrumentals? Visit the Producer&apos;s Cut.</p>
+          </div>
+          <Link to="/producers-cut" className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--base)] transition-opacity hover:opacity-85">
+            Explore Producer&apos;s Cut <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+          </Link>
+        </div>
+      </section>
+
       {data.upcoming && (
         <section aria-labelledby="upcoming-title" className="home-section grid items-center gap-5 border-t border-[var(--rule)] py-16 sm:grid-cols-[140px_minmax(0,1fr)_auto] sm:gap-8 sm:py-20 md:grid-cols-[160px_minmax(0,1fr)_auto]">
           {data.upcoming.artwork_url ? <img src={coverUrl(data.upcoming.artwork_url)} alt={`${data.upcoming.title} cover artwork`} width={240} height={240} loading="lazy" className="aspect-square w-[140px] object-cover md:w-[160px]" /> : <div className="aspect-square w-[140px] bg-[var(--surface)] md:w-[160px]" />}
