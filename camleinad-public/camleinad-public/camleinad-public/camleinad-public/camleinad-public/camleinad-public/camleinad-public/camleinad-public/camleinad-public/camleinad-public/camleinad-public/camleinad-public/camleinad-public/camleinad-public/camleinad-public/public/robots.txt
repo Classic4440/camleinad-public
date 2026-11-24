@@ -13,3 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 Sitemap: https://camleinad.pages.dev/llms.txt
+Sitemap: https://camleinad.pages.dev/sitemap.xml
